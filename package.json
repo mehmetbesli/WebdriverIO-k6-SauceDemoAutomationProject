@@ -1,0 +1,35 @@
+{
+  "name": "webdriverio-k6-saucedemo-automation-project",
+  "version": "1.0.0",
+  "description": "Enterprise End-to-End Test Automation with WebdriverIO (TypeScript) and Performance Testing with k6 (JavaScript) for SauceDemo",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test:e2e",
+    "test:all": "npm run test:e2e && npm run test:perf",
+    "test:e2e": "wdio run ./src/config/wdio.conf.ts",
+    "test:e2e:spec": "wdio run ./src/config/wdio.conf.ts --spec",
+    "test:perf": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js",
+    "test:perf:smoke": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --vus 1 --duration 5s"
+  },
+  "keywords": [
+    "webdriverio",
+    "k6",
+    "typescript",
+    "saucedemo",
+    "e2e-testing",
+    "performance-testing",
+    "page-object-model"
+  ],
+  "author": "Antigravity Automation QA",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.13.10",
+    "@wdio/cli": "^9.14.0",
+    "@wdio/local-runner": "^9.14.0",
+    "@wdio/mocha-framework": "^9.14.0",
+    "@wdio/spec-reporter": "^9.14.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  }
+}
