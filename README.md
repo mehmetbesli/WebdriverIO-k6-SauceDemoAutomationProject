@@ -13,8 +13,9 @@ Bu proje, [SauceDemo](https://www.saucedemo.com/) e-ticaret platformu için geli
 - [⚙️ Kurulum ve Ön Koşullar](#️-kurulum-ve-ön-koşullar)
 - [🌐 Çoklu Test Ortamı Desteği (Multi-Environment)](#-çoklu-test-ortamı-desteği-multi-environment)
 - [🚀 Testleri Çalıştırma](#-testleri-çalıştırma)
-- [📈 Raporlama Çıktıları](#-raporlama-çıktıları)
-- [🔄 CI/CD Pipeline Entegrasyonu](#-cicd-pipeline-entegrasyonu)
+- [📊 Rapor Vitrini ve Örnek Çıktılar (Showcase)](#-rapor-vitrini--örnek-çıktılar-reporting-showcase)
+- [📈 Raporlama Çıktıları](#-raporlama-çıktıları-reports-structure)
+- [🔄 CI/CD Pipeline Entegrasyonu](#-cicd-pipeline-entegrasyonu-github-actions)
 - [🎯 Tasarım Prensipleri](#-tasarım-prensipleri)
 - [📝 Geliştirme Notları ve Yapılan İşlemler (Engineering Log)](#-geliştirme-notları-ve-yapılan-işlemler-engineering-log)
 
@@ -27,9 +28,11 @@ Bu proje, [SauceDemo](https://www.saucedemo.com/) e-ticaret platformu için geli
 | **Web Test Runner** | [WebdriverIO v9](https://webdriver.io/) | Modern W3C WebDriver ve Bidi protokol destekli E2E test framework'ü |
 | **Dil (E2E)** | [TypeScript 5](https://www.typescriptlang.org/) | Tip güvenli (Type-safe), sürdürülebilir nesne yönelimli kodlama |
 | **Test Framework** | [Mocha](https://mochajs.org/) + BDD Expect | BDD tarzı `describe`, `it` ve `expect` assertion kütüphanesi |
+| **Raporlama (Allure)** | [Allure Reporter](https://allurereport.org/) | Tek dosya (`--single-file`) interaktif HTML test portalı ve zaman çizelgesi |
+| **Raporlama (Excel)** | [ExcelJS](https://github.com/exceljs/exceljs) | Yönetici ve QA ekipleri için renkli KPI kartlı kurumsal `.xlsx` dashboard motoru |
 | **Performans Testi** | [Grafana k6](https://k6.io/) | Yüksek performanslı Go tabanlı, JavaScript ile yazılan yük testi aracı |
 | **Tasarım Deseni** | [Page Object Model (POM)](https://martinfowler.com/bliki/PageObjectModel.html) | UI elemanları ile test adımlarını kesin hatlarla ayrıştıran mimari |
-| **CI/CD** | GitHub Actions | Otomatik derleme, test çalıştırma ve rapor arşivleme pipeline'ı |
+| **CI/CD** | GitHub Actions | Ubuntu üzerinde çoklu ortam, k6, Java 17 ve Allure artefakt pipeline'ı |
 
 ---
 
@@ -79,6 +82,11 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
   * HTML dashboard raporunda her test sonucunun yanında dinamik `🌐 Chrome`, `🌊 Edge`, `🦊 Firefox` rozet gösterimi.
 * **🔄 GitHub Actions CI/CD Pipeline:**
   * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/github-actions.yml`).
+* **🏆 Bağımsız Allure Reporter (Tek Dosya Standalone HTML):**
+  * Her E2E test koşumunun ardından `reports/allure-report/YYYY-MM-DD_HH-mm-ss.html` formatında otomatik derlenen, sunucu/CORS gerektirmeden çift tıklamayla doğrudan tarayıcıda açılan, zaman çizelgeli (Timeline) ve hiyerarşik adım ağaçlı Allure portalı.
+* **📊 Yönetici ve QA Excel Raporlama (`.xlsx` Dashboard):**
+  * E2E testleri için `reports/e2e/excel/`, k6 performans testleri için `reports/performance/excel/` altında kurumsal ExcelJS motoru ile üretilen çift sayfalı çalışma kitapları.
+  * Renkli KPI kartları, % Pass Rate, ortam bilgisi, otomatik filtreler ve hata anı ekran görüntülerine tıklanabilir köprüler.
 
 ---
 
@@ -93,16 +101,22 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 │   ├── assets/                       # README için rapor önizleme ekran görüntüleri
 │   └── sample-reports/               # İndirilebilir örnek Allure, Excel ve HTML raporları
 ├── reports/                          # Otomatik üretilen test çıktıları
+│   ├── allure-results/               # Allure ham JSON test metrikleri ve ekleri (oturum bazlı temizlenir)
+│   ├── allure-report/                # YYYY-MM-DD_HH-mm-ss.html (Bağımsız tek dosya Allure HTML portalları)
 │   ├── e2e/
+│   │   ├── excel/                    # YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx (E2E Yönetici Excel raporları)
 │   │   ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (E2E HTML raporları)
 │   │   ├── logs/                     # YYYY-MM-DD_HH-mm-ss.log ve e2e-execution.log (E2E log dosyaları)
 │   │   └── screenshots/              # YYYY-MM-DD_HH-mm-ss.png (Fail anında hata ekran görüntüleri)
 │   └── performance/
+│       ├── excel/                    # YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx (k6 SLA Excel raporları)
 │       ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (k6 HTML raporları)
 │       ├── logs/                     # YYYY-MM-DD_HH-mm-ss.log ve perf-execution.log (k6 log dosyaları)
 │       ├── screenshots/              # YYYY-MM-DD_HH-mm-ss.png (Fail anında hata ekran görüntüleri)
 │       └── k6-summary.json           # k6 metrikleri ve JSON özeti
 ├── scripts/
+│   ├── utils/
+│   │   └── perfExcelReporter.js      # k6 Performans SLA Excel (.xlsx) raporlayıcı betiği
 │   └── run-k6.js                     # Çapraz platform k6 yürütücü betiği
 ├── src/
 │   ├── config/
@@ -403,6 +417,7 @@ Proje, GitHub Actions üzerinde tam otomatik veya parametrik manuel tetiklenecek
      * 🌍 **Ortam:** `qa`, `dev`, `staging`, `prod`
      * 🧪 **Test Paketi:** `all` (E2E + Perf), `e2e` (yalnızca E2E), `performance` (yalnızca k6)
      * 🌐 **Tarayıcı:** `chrome`, `firefox`
+   * **Zamanlanmış Gece Koşumu (Nightly Schedule - Cron):** Günde 1 defa otomatik gece koşumu için hazır şablon (`cron: '0 0 * * *'`), iş akışı dosyasında hazır tutulmakta olup istendiği an tek satırla aktif edilebilir.
 2. **Derleme ve Çalıştırma Ortamı:**
    * `ubuntu-latest` üzerinde Node.js 20, OpenJDK 17 (Allure CLI için) ve Grafana k6 motorunu otomatik kurar.
 3. **Otomatik Özet Panosu (`$GITHUB_STEP_SUMMARY`):**
@@ -481,6 +496,28 @@ Bu bölüm, projeyi inceleyen geliştiricilerin ve test mühendislerinin projeni
 * WebdriverIO ve Mocha framework seviyesinde varsayılan 2 deneme hakkı (`retries: 2`, `specFileRetries: 2`) tanımlandı.
 * `afterTest` kancası akıllı retry takibi ile güncellendi: ara fail adımlarında konsol uyarısı basılırken, ekran görüntüsü yalnızca tüm denemeler tükenirse son fail anında alınacak şekilde optimize edildi.
 * HTML raporuna flaky test rozeti (`PASSED (FLAKY)`) ve yeniden deneme sayaçları entegre edildi.
+
+### 9. ⚡ Eşzamanlı Paralel Test Koşumu (Parallel Execution - Varsayılan: 3 Worker)
+* Bağımsız spec dosyalarını aynı anda farklı tarayıcı worker süreçlerinde koşturarak test paketinin toplam çalışma süresini dramatik biçimde kısaltan paralel mimari kuruldu.
+* Çoklu iş parçacığı tarafından üretilen test sonuçlarını tek bir raporda toplayan **Birleşik Paralel HTML Raporu** ve worker etiketli ortak loglama (`[0-0]`, `[0-1]`, `[0-2]`) entegre edildi.
+
+### 10. 🌐 Çapraz Tarayıcı Desteği (Cross-Browser: Chrome, Edge, Firefox)
+* `BROWSER` parametresi (`chrome`, `edge`, `firefox`, `all`) ile tekli tarayıcı veya eşzamanlı tarayıcı matrisi testi geliştirildi.
+* Tarayıcıya özel W3C yetenekleri (`goog:chromeOptions`, `ms:edgeOptions`, `moz:firefoxOptions`) ile hem headless hem headed desteği sağlandı.
+
+### 11. 📊 Kurumsal Çok Sayfalı Excel Raporlama (Executive Excel Reporting)
+* Test koşumlarının ardından otomatik çalışan kurumsal ExcelJS motorları geliştirildi (`src/utils/excelReporter.ts` ve `scripts/utils/perfExcelReporter.js`).
+* **E2E Excel Raporu (`reports/e2e/excel/YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx`):** Executive Dashboard (renkli KPI kartları, % Pass Rate, süre) ve E2E Test Details (filtreli tablo ve fail anı ekran görüntülerine tıklanabilir köprüler) içerir.
+* **Performans Excel Raporu (`reports/performance/excel/YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx`):** Performance Dashboard (P95, hata oranı, istek sayısı) ve Step & Check Details (her adımın başarı/başarısızlık sayıları ve SLA rozetleri) içerir.
+
+### 12. 🏆 Bağımsız Allure Reporter Entegrasyonu (Tek Dosya Standalone HTML)
+* `@wdio/allure-reporter` ve `allure-commandline` araçları entegre edildi.
+* Her koşum sonrasında `onComplete` kancası aracılığıyla `--single-file` modunda derleme yapılarak sunucu gerektirmeyen bağımsız HTML üretildi.
+* Raporların üzerine yazılmasını engellemek amacıyla zaman damgalı isimlendirme (`reports/allure-report/YYYY-MM-DD_HH-mm-ss.html`) ve oturum bazlı `allure-results` temizliği sağlandı.
+
+### 13. 🎨 Rapor Vitrini ve İndirilebilir Örnek Dosyalar (Reporting Showcase)
+* Depoyu inceleyen ekiplerin projeyi klonlamadan rapor kalitesini gözlemleyebilmesi için `docs/sample-reports/` altında örnek Allure, Excel ve HTML dosyaları kalıcı olarak konumlandırıldı.
+* `docs/assets/` altında headless motorla yakalanan gerçek rapor arayüz ekran görüntüleri ve `README.md` içerisinde görsel galeri ile indirme tablosu oluşturuldu.
 
 
 

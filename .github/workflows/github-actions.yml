@@ -5,6 +5,10 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
+  # Otomatik Zamanlanmış Gece Koşumu (Nightly Schedule - Günde 1 defa saat 00:00 UTC):
+  # Aktif etmek için aşağıdaki 2 satırın başındaki '#' işaretini kaldırmanız yeterlidir:
+  # schedule:
+  #   - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       environment:
