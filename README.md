@@ -258,12 +258,15 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 #### 4. Çapraz Tarayıcı (Cross-Browser) Koşum Komutları:
 | Komut | Açıklama |
 | :--- | :--- |
-| `npm run test:e2e:chrome` | Testleri **Google Chrome** tarayıcısında koşturur |
-| `npm run test:e2e:edge` | Testleri **Microsoft Edge** tarayıcısında koşturur |
-| `npm run test:e2e:firefox` | Testleri **Mozilla Firefox** tarayıcısında koşturur |
-| `npm run test:e2e:headed:edge` | Microsoft Edge tarayıcısını ekranda canlı açarak koşturur |
+| `npm run test:e2e:chrome` | Testleri **Google Chrome** tarayıcısında (Headless) koşturur |
+| `npm run test:e2e:edge` | Testleri **Microsoft Edge** tarayıcısında (Headless) koşturur |
+| `npm run test:e2e:firefox` | Testleri **Mozilla Firefox** tarayıcısında (Headless) koşturur |
+| `npm run test:e2e:headed:chrome` | **Google Chrome** tarayıcısını ekranda canlı açarak izletir |
+| `npm run test:e2e:headed:edge` | **Microsoft Edge** tarayıcısını ekranda canlı açarak izletir |
+| `npm run test:e2e:headed:firefox` | **Mozilla Firefox** tarayıcısını ekranda canlı açarak izletir |
 | `npm run test:e2e:multibrowser` | **Chrome ve Edge** tarayıcılarında aynı anda çoklu tarayıcı matrisi koşturur |
-| `npm run test:e2e:multibrowser:parallel` | Hem çoklu tarayıcı (Chrome + Edge) hem de çoklu worker ile yüksek hızlı paralel koşum |
+| `npm run test:e2e:multibrowser:headed` | **Hem Chrome hem Edge'i ekranda aynı anda açarak** yan yana canlı izletir |
+| `npm run test:e2e:multibrowser:parallel` | Çoklu tarayıcı (Chrome + Edge) ve çoklu worker ile yüksek hızlı paralel koşum |
 
 #### 5. k6 Performans & Yük Testi Koşumu:
 | Komut | Açıklama |
