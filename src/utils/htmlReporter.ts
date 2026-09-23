@@ -3,11 +3,23 @@ export interface TestResultItem {
   parent: string;
   passed: boolean;
   duration: number;
+  browserName?: string;
   error?: string | null;
   screenshot?: string | null;
   timestamp: string;
   retries?: number;
   isFlaky?: boolean;
+}
+
+function getBrowserBadge(browserName: string = 'chrome'): string {
+  const b = browserName.toLowerCase();
+  if (b.includes('edge')) {
+    return `<span class="badge" style="background:#f0fdf4; color:#166534; font-weight:700;">🌊 Edge</span>`;
+  }
+  if (b.includes('firefox')) {
+    return `<span class="badge" style="background:#fff7ed; color:#c2410c; font-weight:700;">🦊 Firefox</span>`;
+  }
+  return `<span class="badge" style="background:#e0f2fe; color:#0369a1; font-weight:700;">🌐 Chrome</span>`;
 }
 
 /**
@@ -54,6 +66,7 @@ export function generateE2EHtmlReport(
       <tr>
         <td>${i + 1}</td>
         <td><strong>${r.title}</strong><br><small style="color:#64748b">${r.parent}</small>${retryNotice}</td>
+        <td>${getBrowserBadge(r.browserName)}</td>
         <td>${badgeHtml}</td>
         <td>${(r.duration / 1000).toFixed(2)}s</td>
         <td>${r.timestamp}</td>
@@ -133,6 +146,7 @@ export function generateE2EHtmlReport(
         <tr>
           <th style="width: 40px">#</th>
           <th>Test Name</th>
+          <th style="width: 100px">Browser</th>
           <th style="width: 90px">Status</th>
           <th style="width: 90px">Duration</th>
           <th style="width: 160px">Timestamp</th>
