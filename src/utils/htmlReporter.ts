@@ -22,7 +22,7 @@ export function generateE2EHtmlReport(
   const total = results.length;
   const passed = results.filter((r) => r.passed).length;
   const failed = results.filter((r) => !r.passed).length;
-  const flaky = results.filter((r) => r.isFlaky || (r.passed && (r.retries || 0) > 0)).length;
+  const retried = results.filter((r) => (r.retries && r.retries > 0) || r.isFlaky).length;
   const totalDuration = (results.reduce((acc, r) => acc + r.duration, 0) / 1000).toFixed(2);
   const statusClass = failed === 0 ? 'status-pass' : 'status-fail';
   const statusText = failed === 0 ? 'PASSED' : 'FAILED';
@@ -32,12 +32,18 @@ export function generateE2EHtmlReport(
       let badgeHtml = `<span class="badge ${r.passed ? 'badge-pass' : 'badge-fail'}">${r.passed ? 'PASSED' : 'FAILED'}</span>`;
       if (r.passed && r.isFlaky) {
         badgeHtml = `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;">PASSED (FLAKY)</span>`;
+      } else if (!r.passed && r.retries && r.retries > 0) {
+        badgeHtml = `<span class="badge badge-fail" style="background:#fee2e2; color:#b91c1c; font-weight:700;">FAILED (${r.retries}x RETRIED)</span>`;
       }
 
-      const retryNotice =
-        r.retries && r.retries > 0
-          ? `<br><small style="color:#d97706; font-weight:600;">⚠️ Retried: ${r.retries} attempt(s)</small>`
-          : '';
+      let retryNotice = '';
+      if (r.retries && r.retries > 0) {
+        if (r.passed) {
+          retryNotice = `<br><small style="color:#d97706; font-weight:600;">⚠️ Passed after retry #${r.retries}</small>`;
+        } else {
+          retryNotice = `<br><small style="color:#dc2626; font-weight:600;">⚠️ Retried ${r.retries} time(s) - All Failed</small>`;
+        }
+      }
 
       return `
       <tr>
@@ -51,6 +57,7 @@ export function generateE2EHtmlReport(
             r.passed
               ? `<span style="color:#16a34a">✓ No Errors${r.isFlaky ? ` (Resolved after retry #${r.retries})` : ''}</span>`
               : `<div class="error-msg">${r.error || 'Unknown error'}</div>
+                 ${r.retries && r.retries > 0 ? `<div style="color:#dc2626; font-size:12px; font-weight:600; margin-bottom:4px;">❌ Failed after ${r.retries + 1} total attempts (${r.retries} retries)</div>` : ''}
                  ${
                    r.screenshot
                      ? `<a class="screenshot-link" href="${r.screenshot}" target="_blank">📸 View Screenshot</a>`
@@ -103,7 +110,7 @@ export function generateE2EHtmlReport(
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <span style="background: #e0e7ff; color: #3730a3; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px;">ENV: ${environment.toUpperCase()}</span>
-        ${flaky > 0 ? `<span style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px;">FLAKY: ${flaky}</span>` : ''}
+        ${retried > 0 ? `<span style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px;">RETRIED: ${retried}</span>` : ''}
         <div class="status-badge ${statusClass}">${statusText}</div>
       </div>
     </div>
@@ -112,7 +119,7 @@ export function generateE2EHtmlReport(
       <div class="metric-card"><div class="metric-label">Total Tests</div><div class="metric-val">${total}</div></div>
       <div class="metric-card pass"><div class="metric-label">Passed</div><div class="metric-val">${passed}</div></div>
       <div class="metric-card ${failed > 0 ? 'fail' : ''}"><div class="metric-label">Failed</div><div class="metric-val">${failed}</div></div>
-      <div class="metric-card ${flaky > 0 ? 'flaky' : ''}"><div class="metric-label">Flaky / Retried</div><div class="metric-val" style="${flaky > 0 ? 'color: #d97706;' : ''}">${flaky}</div></div>
+      <div class="metric-card ${retried > 0 ? 'flaky' : ''}"><div class="metric-label">Flaky / Retried</div><div class="metric-val" style="${retried > 0 ? 'color: #d97706;' : ''}">${retried}</div></div>
       <div class="metric-card"><div class="metric-label">Total Duration</div><div class="metric-val">${totalDuration}s</div></div>
     </div>
 

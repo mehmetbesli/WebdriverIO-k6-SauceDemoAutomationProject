@@ -58,8 +58,13 @@ export const config: WebdriverIO.Config = {
    */
   afterTest: async function (test, _context, { error, duration, passed, retries }) {
     const timestamp = getFormattedTimestamp();
-    const attempts = retries?.attempts ?? 0;
-    const limit = retries?.limit ?? defaultRetries;
+    const mochaTest = test as any;
+    const attempts = typeof mochaTest.currentRetry === 'function'
+      ? mochaTest.currentRetry()
+      : (mochaTest._currentRetry ?? retries?.attempts ?? 0);
+    const limit = typeof mochaTest.retries === 'function'
+      ? mochaTest.retries()
+      : (mochaTest._retries ?? retries?.limit ?? defaultRetries);
     const willRetry = !passed && attempts < limit;
 
     let relativeScreenshotPath: string | null = null;
@@ -76,7 +81,7 @@ export const config: WebdriverIO.Config = {
         const fullScreenshotPath = path.resolve(screenshotsDir, screenshotFileName);
         await browser.saveScreenshot(fullScreenshotPath);
         relativeScreenshotPath = `../screenshots/${screenshotFileName}`;
-        console.log(`\x1b[31m[E2E Reporter] Final failure screenshot captured: ${fullScreenshotPath}\x1b[0m`);
+        console.log(`\x1b[31m[E2E Reporter] Final failure screenshot captured (all ${limit} retries exhausted): ${fullScreenshotPath}\x1b[0m`);
       }
     }
 
