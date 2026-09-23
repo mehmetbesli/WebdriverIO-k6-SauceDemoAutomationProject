@@ -1,0 +1,136 @@
+name: SauceDemo Docker Container Pipeline
+
+on:
+  # Otomatik Zamanlanmış Gece Koşumu (Nightly Schedule - Günde 1 defa saat 00:00 UTC):
+  # schedule:
+  #   - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Test Environment'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - dev
+          - staging
+          - prod
+      test_type:
+        description: 'Test Suite to Execute'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - e2e
+          - performance
+
+jobs:
+  docker-tests:
+    name: Run Tests in Docker Container
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    env:
+      TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
+      TEST_TYPE: ${{ github.event.inputs.test_type || 'all' }}
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔨 Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          load: true
+          tags: saucedemo-test-automation:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🧪 Execute Tests Inside Docker Container
+        id: container_test
+        run: |
+          mkdir -p reports
+          chmod -R 777 reports
+          echo "Running $TEST_TYPE tests on environment: $TEST_ENV inside container..."
+          
+          if [ "$TEST_TYPE" = "e2e" ]; then
+            docker run --rm \
+              -e CI=true \
+              -e HEADLESS=true \
+              -e AUTO_OPEN=false \
+              -e TEST_ENV=$TEST_ENV \
+              -v $(pwd)/reports:/app/reports \
+              saucedemo-test-automation:latest npm run test:e2e
+          elif [ "$TEST_TYPE" = "performance" ]; then
+            docker run --rm \
+              -e CI=true \
+              -e TEST_ENV=$TEST_ENV \
+              -v $(pwd)/reports:/app/reports \
+              saucedemo-test-automation:latest npm run test:perf
+          else
+            docker run --rm \
+              -e CI=true \
+              -e HEADLESS=true \
+              -e AUTO_OPEN=false \
+              -e TEST_ENV=$TEST_ENV \
+              -v $(pwd)/reports:/app/reports \
+              saucedemo-test-automation:latest npm run test:all
+          fi
+        continue-on-error: true
+
+      - name: 📊 Generate Docker Execution Summary
+        if: always()
+        run: |
+          echo "## 🐳 SauceDemo Docker Container Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`${{ env.TEST_ENV }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Test Suite** | \`${{ env.TEST_TYPE }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Container Environment** | Debian Bookworm (Chrome + OpenJDK 17 + k6) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | $( [ "${{ steps.container_test.outcome }}" = "success" ] && echo "🟢 **PASSED**" || echo "🔴 **FAILED**" ) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📑 Generated Artifacts from Container" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 **Allure Standalone HTML Report**" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 **Executive Excel Reports (E2E & Performance)**" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 **Full HTML Dashboards & Logs**" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload Container Allure HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-allure-report
+          path: reports/allure-report/
+          retention-days: 14
+
+      - name: 📤 Upload Container Executive Excel Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-excel-reports
+          path: |
+            reports/e2e/excel/*.xlsx
+            reports/performance/excel/*.xlsx
+          retention-days: 14
+
+      - name: 📤 Upload Full Container Reports & Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-full-reports
+          path: reports/
+          retention-days: 14
+
+      - name: ❌ Fail Pipeline If Container Tests Failed
+        if: steps.container_test.outcome == 'failure'
+        run: |
+          echo "::error::Docker container test execution failed. Check uploaded artifacts for details."
+          exit 1

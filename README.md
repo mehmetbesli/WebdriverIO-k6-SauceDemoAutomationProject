@@ -16,6 +16,7 @@ Bu proje, [SauceDemo](https://www.saucedemo.com/) e-ticaret platformu için geli
 - [📊 Rapor Vitrini ve Örnek Çıktılar (Showcase)](#-rapor-vitrini--örnek-çıktılar-reporting-showcase)
 - [📈 Raporlama Çıktıları](#-raporlama-çıktıları-reports-structure)
 - [🔄 CI/CD Pipeline Entegrasyonu](#-cicd-pipeline-entegrasyonu-github-actions)
+- [🐳 Docker ile Konteynerize Test Koşumu](#-docker-ile-konteynerize-test-koşumu)
 - [🎯 Tasarım Prensipleri](#-tasarım-prensipleri)
 - [📝 Geliştirme Notları ve Yapılan İşlemler (Engineering Log)](#-geliştirme-notları-ve-yapılan-işlemler-engineering-log)
 
@@ -96,7 +97,8 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
 WebdriverIO-k6-SauceDemoAutomationProject/
 ├── .github/
 │   └── workflows/
-│       └── github-actions.yml        # GitHub Actions CI/CD Pipeline
+│       ├── github-actions.yml        # Doğrudan Runner CI/CD Pipeline
+│       └── docker-actions.yml        # Ayrı Docker Container CI/CD Pipeline
 ├── docs/                             # Dokümantasyon, görseller ve örnek test raporları
 │   ├── assets/                       # README için rapor önizleme ekran görüntüleri
 │   └── sample-reports/               # İndirilebilir örnek Allure, Excel ve HTML raporları
@@ -162,6 +164,9 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 │       ├── utils/
 │       │   └── perfLogger.js         # k6 gerçek zamanlı adım loglayıcı & VU flood koruyucu
 │       └── sauceDemoLoad.test.js     # k6 JavaScript Kullanıcı Akışı Yük/Performans Senaryosu
+├── Dockerfile                        # Headless Chrome, Java 17 ve k6 içeren Linux container tanımı
+├── docker-compose.yml                # Çoklu servis (e2e, perf, all) container orkestrasyonu
+├── .dockerignore                     # Docker build dışlama listesi
 ├── package.json                      # NPM bağımlılıkları ve çalıştırma scriptleri
 ├── tsconfig.json                     # TypeScript derleyici yapılandırması
 ├── .gitignore                        # Git sürüm kontrolü dışlama listesi
@@ -429,6 +434,26 @@ Proje, GitHub Actions üzerinde tam otomatik veya parametrik manuel tetiklenecek
 
 ---
 
+## 🐳 Docker ile Konteynerize Test Koşumu
+
+Proje, yerel makinenizde Node.js, k6, Java veya Chrome kurulu olmasına gerek kalmaksızın, tamamen izole bir Linux container içerisinde çalışacak şekilde [`Dockerfile`](Dockerfile) ve [`docker-compose.yml`](docker-compose.yml) ile paketlenmiştir.
+
+Ayrıca CI/CD tarafında doğrudan runner yerine Docker içinde koşturmak için **ayrı bir iş akışı** [`.github/workflows/docker-actions.yml`](.github/workflows/docker-actions.yml) bulunmaktadır.
+
+### 🚀 Docker Komutları
+
+| Amaç | Komut | Açıklama |
+| :--- | :--- | :--- |
+| **İmajı Derle** | `npm run docker:build` veya `docker compose build` | Debian Bookworm, Google Chrome, Java 17 ve k6 içeren test imajını derler |
+| **E2E Testleri Koş** | `npm run docker:test:e2e` veya `docker compose run --rm e2e` | WebdriverIO E2E testlerini container içinde headless çalıştırır |
+| **Performans Testini Koş** | `npm run docker:test:perf` veya `docker compose run --rm perf` | k6 yük testlerini container içinde çalıştırır |
+| **Tüm Testleri Koş** | `npm run docker:test:all` veya `docker compose run --rm all` | E2E ve performans testlerini sırayla container içinde tamamlar |
+
+> [!TIP]
+> **Rapor Kalıcılığı (Volume Mount):** `docker-compose.yml` içerisinde `./reports:/app/reports` bağlandığı için container içinde üretilen tüm Allure HTML, Excel tabloları ve hata ekran görüntüleri doğrudan yerel makinenizdeki `reports/` dizinine anında aktarılır.
+
+---
+
 ## 🎯 Tasarım Prensipleri
 
 1. **Zero Redundancy & YAGNI:** İhtiyaç duyulmayan hiçbir harici kütüphane veya soyutlama katmanı eklenmemiştir.
@@ -518,6 +543,11 @@ Bu bölüm, projeyi inceleyen geliştiricilerin ve test mühendislerinin projeni
 ### 13. 🎨 Rapor Vitrini ve İndirilebilir Örnek Dosyalar (Reporting Showcase)
 * Depoyu inceleyen ekiplerin projeyi klonlamadan rapor kalitesini gözlemleyebilmesi için `docs/sample-reports/` altında örnek Allure, Excel ve HTML dosyaları kalıcı olarak konumlandırıldı.
 * `docs/assets/` altında headless motorla yakalanan gerçek rapor arayüz ekran görüntüleri ve `README.md` içerisinde görsel galeri ile indirme tablosu oluşturuldu.
+
+### 14. 🐳 Docker Konteynerizasyonu & Ayrı Docker CI/CD Pipeline
+* `Dockerfile` hazırlanarak Debian Bookworm üzerinde Google Chrome Stable, OpenJDK 17 (Allure CLI için) ve Grafana k6 motorunu barındıran taşınabilir bir test imajı oluşturuldu.
+* `docker-compose.yml` orkestrasyonu ile `e2e`, `perf` ve `all` servisleri tanımlandı; `./reports:/app/reports` volume bağlamasıyla container içi üretilen raporların ana makineye yazılması sağlandı.
+* Doğrudan runner iş akışından tamamen ayrı olarak yapılandırılan [`.github/workflows/docker-actions.yml`](.github/workflows/docker-actions.yml) dosyası eklendi; GitHub Actions Buildx önbelleği (`type=gha`), izole container testi ve çoklu artefakt arşivlemesi sağlandı.
 
 
 

@@ -41,7 +41,11 @@
     "test:perf:staging": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=staging",
     "test:perf:prod": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=prod",
     "report:allure:generate": "allure generate reports/allure-results --clean -o reports/allure-report",
-    "report:allure:open": "allure open reports/allure-report"
+    "report:allure:open": "allure open reports/allure-report",
+    "docker:build": "docker build -t saucedemo-test-automation:latest .",
+    "docker:test:e2e": "docker compose run --rm e2e",
+    "docker:test:perf": "docker compose run --rm perf",
+    "docker:test:all": "docker compose run --rm all"
   },
   "keywords": [
     "webdriverio",

@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # E2E WebdriverIO Test Runner
+  e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: saucedemo-test-automation:latest
+    container_name: saucedemo-e2e-tests
+    environment:
+      - CI=true
+      - HEADLESS=true
+      - AUTO_OPEN=false
+      - TEST_ENV=${TEST_ENV:-qa}
+      - BROWSER=${BROWSER:-chrome}
+    command: npm run test:e2e
+    volumes:
+      - ./reports:/app/reports
+
+  # Grafana k6 Performance Test Runner
+  perf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: saucedemo-test-automation:latest
+    container_name: saucedemo-perf-tests
+    environment:
+      - CI=true
+      - TEST_ENV=${TEST_ENV:-qa}
+    command: npm run test:perf
+    volumes:
+      - ./reports:/app/reports
+
+  # Full Test Suite Runner (E2E + Performance)
+  all:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: saucedemo-test-automation:latest
+    container_name: saucedemo-all-tests
+    environment:
+      - CI=true
+      - HEADLESS=true
+      - AUTO_OPEN=false
+      - TEST_ENV=${TEST_ENV:-qa}
+      - BROWSER=${BROWSER:-chrome}
+    command: npm run test:all
+    volumes:
+      - ./reports:/app/reports
