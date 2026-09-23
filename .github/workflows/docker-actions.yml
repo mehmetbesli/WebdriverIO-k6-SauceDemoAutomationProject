@@ -1,6 +1,20 @@
 name: SauceDemo Docker Container Pipeline
 
 on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - '.github/workflows/docker-actions.yml'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.dockerignore'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - '.github/workflows/docker-actions.yml'
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - '.dockerignore'
   # Otomatik Zamanlanmış Gece Koşumu (Nightly Schedule - Günde 1 defa saat 00:00 UTC):
   # schedule:
   #   - cron: '0 0 * * *'
