@@ -3,6 +3,7 @@ import fs from 'fs';
 import { browser } from '@wdio/globals';
 import { getFormattedTimestamp } from '../utils/dateTimeHelper';
 import { generateE2EHtmlReport, TestResultItem } from '../utils/htmlReporter';
+import { generateE2EExcelReport } from '../utils/excelReporter';
 import { getCurrentEnvironment, getEnvironmentName } from './environment';
 import { Logger } from '../utils/logger';
 
@@ -202,7 +203,7 @@ export const config: WebdriverIO.Config = {
    * Hook executed once all workers have finished running all specs
    * Aggregates results from all parallel workers into a single unified HTML dashboard
    */
-  onComplete: function () {
+  onComplete: async function () {
     const tempDir = path.resolve(process.cwd(), 'reports/e2e/.results');
     const allResults: TestResultItem[] = [];
 
@@ -227,19 +228,44 @@ export const config: WebdriverIO.Config = {
 
     if (allResults.length > 0) {
       const htmlDir = path.resolve(process.cwd(), 'reports/e2e/html');
+      const excelDir = path.resolve(process.cwd(), 'reports/excel');
       if (!fs.existsSync(htmlDir)) {
         fs.mkdirSync(htmlDir, { recursive: true });
+      }
+      if (!fs.existsSync(excelDir)) {
+        fs.mkdirSync(excelDir, { recursive: true });
       }
 
       const timestamp = Logger.getSessionTimestamp();
       const reportFile = path.resolve(htmlDir, `${timestamp}.html`);
+      const excelFile = path.resolve(excelDir, `${timestamp}_${envName.toUpperCase()}.xlsx`);
       const reportTitle = targetBrowser === 'all' ? 'SauceDemo Multi-Browser E2E Report' : 'SauceDemo E2E Test Suite';
+
+      // 1. Generate Unified HTML Report
       const htmlContent = generateE2EHtmlReport(reportTitle, timestamp, allResults, envName);
       fs.writeFileSync(reportFile, htmlContent, 'utf-8');
+
+      // 2. Generate Executive Excel Report
+      try {
+        await generateE2EExcelReport({
+          results: allResults,
+          environment: envName,
+          targetUrl: activeEnv.baseUrl,
+          timestamp,
+          outputPath: excelFile,
+          browser: targetBrowser,
+          headless: isHeadless,
+        });
+      } catch (excelErr) {
+        Logger.error('Failed to generate Excel report:', excelErr);
+      }
+
       Logger.info(`[All Parallel Workers Finished] Total Tests: ${allResults.length}`);
       Logger.info(`[Unified HTML Report Generated] ${reportFile}`);
+      Logger.info(`[Executive Excel Report Generated] ${excelFile}`);
       Logger.info(`[Execution Log File] ${Logger.getLogFilePath()}`);
-      console.log(`\n\x1b[32m[E2E Reporter] Unified HTML Report generated: ${reportFile}\x1b[0m\n`);
+      console.log(`\n\x1b[32m[E2E Reporter] Unified HTML Report generated: ${reportFile}\x1b[0m`);
+      console.log(`\x1b[32m[E2E Reporter] Executive Excel Report generated: ${excelFile}\x1b[0m\n`);
     }
   },
 };
