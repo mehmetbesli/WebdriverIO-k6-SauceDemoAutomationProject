@@ -6,6 +6,8 @@ export interface TestResultItem {
   error?: string | null;
   screenshot?: string | null;
   timestamp: string;
+  retries?: number;
+  isFlaky?: boolean;
 }
 
 /**
@@ -25,18 +27,28 @@ export function generateE2EHtmlReport(
   const statusText = failed === 0 ? 'PASSED' : 'FAILED';
 
   const rows = results
-    .map(
-      (r, i) => `
+    .map((r, i) => {
+      let badgeHtml = `<span class="badge ${r.passed ? 'badge-pass' : 'badge-fail'}">${r.passed ? 'PASSED' : 'FAILED'}</span>`;
+      if (r.passed && r.isFlaky) {
+        badgeHtml = `<span class="badge" style="background:#fef3c7; color:#b45309; font-weight:700;">PASSED (FLAKY)</span>`;
+      }
+
+      const retryNotice =
+        r.retries && r.retries > 0
+          ? `<br><small style="color:#d97706; font-weight:600;">⚠️ Retried: ${r.retries} attempt(s)</small>`
+          : '';
+
+      return `
       <tr>
         <td>${i + 1}</td>
-        <td><strong>${r.title}</strong><br><small style="color:#64748b">${r.parent}</small></td>
-        <td><span class="badge ${r.passed ? 'badge-pass' : 'badge-fail'}">${r.passed ? 'PASSED' : 'FAILED'}</span></td>
+        <td><strong>${r.title}</strong><br><small style="color:#64748b">${r.parent}</small>${retryNotice}</td>
+        <td>${badgeHtml}</td>
         <td>${(r.duration / 1000).toFixed(2)}s</td>
         <td>${r.timestamp}</td>
         <td>
           ${
             r.passed
-              ? '<span style="color:#16a34a">✓ No Errors</span>'
+              ? `<span style="color:#16a34a">✓ No Errors${r.isFlaky ? ` (Resolved after retry #${r.retries})` : ''}</span>`
               : `<div class="error-msg">${r.error || 'Unknown error'}</div>
                  ${
                    r.screenshot
@@ -45,8 +57,8 @@ export function generateE2EHtmlReport(
                  }`
           }
         </td>
-      </tr>`
-    )
+      </tr>`;
+    })
     .join('\n');
 
   return `<!DOCTYPE html>

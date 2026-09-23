@@ -61,6 +61,10 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
   * Hem WebdriverIO E2E hem de k6 Performans testleri tek bir bayrakla (`TEST_ENV=staging` veya `--env=staging`) farklı test ortamlarında çalıştırılabilir.
   * Ortama özel Base URL'ler, timeout değerleri, kullanıcı havuzu ve SLA süreleri `src/config/environment.ts` dosyasından dinamik yönetilir.
   * Üretilen E2E ve k6 HTML raporlarında aktif ortam rozeti (`ENV: QA`, `ENV: STAGING`, `ENV: PROD`) otomatik gösterilir.
+* **🔁 Otomatik Yeniden Deneme (Retry Mechanism - Varsayılan: 2):**
+  * Ağ gecikmeleri veya anlık DOM dalgalanmalarından kaynaklı flaky testleri engellemek için test seviyesinde (`mochaOpts.retries: 2`) ve dosya seviyesinde (`specFileRetries: 2`) iki katmanlı retry motoru.
+  * Test ara adımda fail olursa konsola `⚠️ [Retry Engine] ... Retrying...` basılır; hata ekran görüntüsü yalnızca son deneme de başarısız olursa yakalanır.
+  * Flaky geçen testler HTML raporunda şeffaf bir şekilde `PASSED (FLAKY) - Resolved after retry` olarak gösterilir.
 * **🔄 GitHub Actions CI/CD Pipeline:**
   * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/test-pipeline.yml`).
 
@@ -235,6 +239,17 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:perf:staging` | **STAGING** ortamında k6 performans testini koşturur |
 | `npm run test:perf:prod` | **PROD** ortamında k6 performans testini koşturur |
 
+#### 4. Yeniden Deneme (Retry) Parametrelerini Özelleştirme:
+Varsayılan olarak WebdriverIO testleri olası flaky hataları önlemek için **2 kez** tekrar denenir (`RETRIES=2`). Dilerseniz terminal üzerinden bu değeri dinamik değiştirebilirsiniz:
+
+```bash
+# Yeniden denemeyi tamamen kapatıp testi tek sefer koşturmak için (0 Retry):
+npx cross-env RETRIES=0 npm run test:e2e
+
+# Yeniden deneme hakkını 3 sefere çıkarmak için:
+npx cross-env RETRIES=3 npm run test:e2e:staging
+```
+
 ---
 
 ## 📈 Raporlama Çıktıları (Reports Structure)
@@ -335,5 +350,11 @@ Bu bölüm, projeyi inceleyen geliştiricilerin ve test mühendislerinin projeni
 * `DEV`, `QA`, `STAGING` ve `PROD` ortamları için tip güvenli `EnvironmentConfig` arayüzü, dinamik Base URL çözümleme ve kullanıcı kimlik yönetimi sağlandı.
 * `package.json` dosyasına ortama özel npm kısayolları (`test:e2e:qa`, `test:e2e:staging`, `test:e2e:prod`, `test:perf:qa`, `test:perf:staging`, `test:perf:prod`) eklendi.
 * Üretilen tüm E2E ve k6 HTML raporlarının başlığına ve sayaçlarına ortam rozeti (`ENV: STAGING` vb.) entegre edildi.
+
+### 8. 🔁 Otomatik Yeniden Deneme (Retry Engine - Varsayılan: 2)
+* WebdriverIO ve Mocha framework seviyesinde varsayılan 2 deneme hakkı (`retries: 2`, `specFileRetries: 2`) tanımlandı.
+* `afterTest` kancası akıllı retry takibi ile güncellendi: ara fail adımlarında konsol uyarısı basılırken, ekran görüntüsü yalnızca tüm denemeler tükenirse son fail anında alınacak şekilde optimize edildi.
+* HTML raporuna flaky test rozeti (`PASSED (FLAKY)`) ve yeniden deneme sayaçları entegre edildi.
+
 
 
