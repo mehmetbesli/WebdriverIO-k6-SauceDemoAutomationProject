@@ -73,6 +73,10 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
   * Bağımsız spec dosyalarını aynı anda farklı tarayıcı worker süreçlerinde koşturarak test paketinin toplam çalışma süresini dramatik biçimde kısaltır.
   * `maxInstances` ortam değişkeni (`MAX_INSTANCES=3`) veya doğrudan paralel çalıştırma scriptleri (`npm run test:e2e:parallel:staging`).
   * Çoklu iş parçacığı tarafından üretilen test sonuçlarını tek bir raporda toplayan **Birleşik Paralel HTML Raporu** ve worker etiketli ortak loglama (`[0-0]`, `[0-1]`, `[0-2]`).
+* **🌐 Çapraz Tarayıcı Desteği (Cross-Browser: Chrome, Edge, Firefox):**
+  * `BROWSER` parametresi (`chrome`, `edge`, `firefox`, `all`) ile tekli tarayıcı veya eşzamanlı tarayıcı matrisi testi.
+  * Tarayıcıya özel W3C yetenekleri (`goog:chromeOptions`, `ms:edgeOptions`, `moz:firefoxOptions`) ile hem headless hem headed desteği.
+  * HTML dashboard raporunda her test sonucunun yanında dinamik `🌐 Chrome`, `🌊 Edge`, `🦊 Firefox` rozet gösterimi.
 * **🔄 GitHub Actions CI/CD Pipeline:**
   * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/test-pipeline.yml`).
 
@@ -251,7 +255,17 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:e2e:parallel:prod` | **PROD** ortamında tüm spec'leri paralel worker'larla koşturur |
 | `npm run test:e2e:parallel:headed` | Testleri ekranda 3 ayrı Chrome penceresi açarak canlı ve paralel koşturur |
 
-#### 4. k6 Performans & Yük Testi Koşumu:
+#### 4. Çapraz Tarayıcı (Cross-Browser) Koşum Komutları:
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run test:e2e:chrome` | Testleri **Google Chrome** tarayıcısında koşturur |
+| `npm run test:e2e:edge` | Testleri **Microsoft Edge** tarayıcısında koşturur |
+| `npm run test:e2e:firefox` | Testleri **Mozilla Firefox** tarayıcısında koşturur |
+| `npm run test:e2e:headed:edge` | Microsoft Edge tarayıcısını ekranda canlı açarak koşturur |
+| `npm run test:e2e:multibrowser` | **Chrome ve Edge** tarayıcılarında aynı anda çoklu tarayıcı matrisi koşturur |
+| `npm run test:e2e:multibrowser:parallel` | Hem çoklu tarayıcı (Chrome + Edge) hem de çoklu worker ile yüksek hızlı paralel koşum |
+
+#### 5. k6 Performans & Yük Testi Koşumu:
 | Komut | Açıklama |
 | :--- | :--- |
 | `npm run test:perf:qa` | **QA** ortamında k6 performans testini koşturur |
@@ -259,7 +273,7 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:perf:staging` | **STAGING** ortamında k6 performans testini koşturur |
 | `npm run test:perf:prod` | **PROD** ortamında k6 performans testini koşturur |
 
-#### 5. Yeniden Deneme (Retry) Parametrelerini Özelleştirme:
+#### 6. Yeniden Deneme (Retry) Parametrelerini Özelleştirme:
 Varsayılan olarak WebdriverIO testleri olası flaky hataları önlemek için **2 kez** tekrar denenir (`RETRIES=2`). Dilerseniz terminal üzerinden bu değeri dinamik değiştirebilirsiniz:
 
 ```bash
