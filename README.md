@@ -139,6 +139,8 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 │   └── performance/
 │       ├── config/
 │       │   └── k6.config.js          # k6 eşik değerleri (thresholds), aşamalar (stages) ve başlıklar
+│       ├── utils/
+│       │   └── perfLogger.js         # k6 gerçek zamanlı adım loglayıcı & VU flood koruyucu
 │       └── sauceDemoLoad.test.js     # k6 JavaScript Kullanıcı Akışı Yük/Performans Senaryosu
 ├── package.json                      # NPM bağımlılıkları ve çalıştırma scriptleri
 ├── tsconfig.json                     # TypeScript derleyici yapılandırması
@@ -169,6 +171,7 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 * **04_Web_Manifest:** Web manifest dosyasının canlılık kontrolü.
 * **05_Favicon_Asset:** Statik ikon varlığının performans doğrulaması.
 * **Özel Metrikler:** `saucedemo_page_response_time` (Trend), `saucedemo_successful_requests` (Counter), `saucedemo_error_rate` (Rate).
+* **Gerçek Zamanlı Konsol Adım Takibi (`perfLogger.js`):** E2E testlerindeki gibi her adımın başladığı, HTTP durum kodu ve süresi (`ms`) canlı olarak terminalde gösterilir (`🔹 STEP 1..5`, `✅ SUCCESS`, `❌ ERROR`). Çoklu kullanıcı (Multi-VU) yük testlerinde terminal kilitlenmesini önlemek için akış adımları temsili VU 1 üzerinden izletilir; hatalar tüm sanal kullanıcılardan anında yansıtılır.
 
 ---
 

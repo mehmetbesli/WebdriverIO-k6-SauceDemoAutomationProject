@@ -15,6 +15,17 @@ function getFormattedTimestamp(date = new Date()) {
   return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
 }
 
+function getLocalTimeString(date = new Date()) {
+  const pad = (n) => n.toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const month = pad(date.getMonth() + 1);
+  const day = pad(date.getDate());
+  const hours = pad(date.getHours());
+  const minutes = pad(date.getMinutes());
+  const seconds = pad(date.getSeconds());
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
 function resolveK6Executable() {
   const defaultPath = 'C:\\Program Files\\k6\\k6.exe';
   if (fs.existsSync(defaultPath)) {
@@ -109,8 +120,8 @@ finalArgs.push('-e', `TEST_ENV=${testEnv}`);
 console.log(`\n\x1b[36m[k6 Runner] Starting performance test on [${testEnv.toUpperCase()}]...\x1b[0m`);
 console.log(`\x1b[90m[k6 Runner] Environment: ${testEnv.toUpperCase()} | Report ID: ${timestamp}\x1b[0m\n`);
 
-appendLog(`[${new Date().toISOString()}] [k6 Runner] Starting performance test on [${testEnv.toUpperCase()}] | Report ID: ${timestamp}`);
-appendLog(`[${new Date().toISOString()}] [k6 Runner] Arguments: ${finalArgs.join(' ')}`);
+appendLog(`[${getLocalTimeString()}] [k6 Runner] Starting performance test on [${testEnv.toUpperCase()}] | Report ID: ${timestamp}`);
+appendLog(`[${getLocalTimeString()}] [k6 Runner] Arguments: ${finalArgs.join(' ')}`);
 
 const proc = spawn(k6Bin, finalArgs, {
   shell: false,
@@ -123,53 +134,129 @@ const proc = spawn(k6Bin, finalArgs, {
 
 let inReport = false;
 let hasReportStarted = false;
+let hasProgressOnScreen = false;
+let lastProgressTime = '';
 
-function handleStreamData(text) {
-  // If final report banner is received, stream it
-  if (text.includes('SAUCEDEMO K6 PERFORMANCE TEST REPORT') || inReport) {
+function clearProgressLine() {
+  if (hasProgressOnScreen) {
+    if (process.stdout.isTTY) {
+      readline.cursorTo(process.stdout, 0);
+      readline.clearLine(process.stdout, 0);
+    } else {
+      process.stdout.write('\n');
+    }
+    hasProgressOnScreen = false;
+  }
+}
+
+function handleStreamLine(line) {
+  if (!line || !line.trim()) return;
+
+  // 1. Report Banner detection
+  if (line.includes('SAUCEDEMO K6 PERFORMANCE TEST REPORT') || inReport) {
+    clearProgressLine();
     if (!hasReportStarted) {
-      if (process.stdout.isTTY) {
-        readline.cursorTo(process.stdout, 0);
-        readline.clearLine(process.stdout, 0);
-      } else {
-        process.stdout.write('\n');
-      }
       hasReportStarted = true;
       inReport = true;
+      process.stdout.write('\n' + '='.repeat(80) + '\n');
     }
 
     // Ignore trailing k6 default status text after the report banner
     if (
-      text.includes('running (') ||
-      text.includes('default ✓') ||
-      text.includes('default [') ||
-      text.includes('iterations')
+      line.includes('running (') ||
+      line.includes('default ✓') ||
+      line.includes('default [') ||
+      line.includes('iterations')
     ) {
       return;
     }
 
-    process.stdout.write(text);
+    process.stdout.write(line + '\n');
     return;
   }
 
-  // Parse progress updates from k6 live stream and print elegant in-place progress
-  const match = text.match(/running \((.*?)\), (\d+\/\d+) VUs, (\d+) complete/);
-  if (match) {
-    const [, time, vus, completed] = match;
-    const percentMatch = text.match(/\[\s*(\d+%)\s*\]/);
+  // 2. Parse k6 console log outputs (from PerfLogger or custom console.log)
+  const consoleMatch = line.match(/level=(\w+)\s+msg="(.*?)"\s+source=console/);
+  if (consoleMatch) {
+    clearProgressLine();
+    const rawMsg = consoleMatch[2].replace(/\\"/g, '"');
+    const now = getLocalTimeString();
+
+    let consoleLine = '';
+    let fileLine = '';
+
+    const stepMatch = rawMsg.match(/^\[STEP\s*(\d+)\]\s*(.*)$/);
+    const successMatch = rawMsg.match(/^\[SUCCESS\]\s*(.*)$/);
+    const errorMatch = rawMsg.match(/^\[ERROR\]\s*(.*)$/);
+    const infoMatch = rawMsg.match(/^\[INFO\]\s*(.*)$/);
+
+    if (stepMatch) {
+      const stepNum = stepMatch[1];
+      const detail = stepMatch[2];
+      consoleLine = `\x1b[36m[${now}] 🔹 STEP ${stepNum}:\x1b[0m ${detail}`;
+      fileLine = `[${now}] [STEP ${stepNum}] ${detail}`;
+    } else if (successMatch) {
+      const detail = successMatch[1];
+      consoleLine = `\x1b[32m[${now}] ✅ SUCCESS:\x1b[0m ${detail}`;
+      fileLine = `[${now}] [SUCCESS] ${detail}`;
+    } else if (errorMatch) {
+      const detail = errorMatch[1];
+      consoleLine = `\x1b[31m[${now}] ❌ ERROR:\x1b[0m ${detail}`;
+      fileLine = `[${now}] [ERROR] ${detail}`;
+    } else if (infoMatch) {
+      const detail = infoMatch[1];
+      consoleLine = `\x1b[34m[${now}] ℹ️  INFO:\x1b[0m ${detail}`;
+      fileLine = `[${now}] [INFO] ${detail}`;
+    } else {
+      consoleLine = `\x1b[90m[${now}]\x1b[0m ${rawMsg}`;
+      fileLine = `[${now}] ${rawMsg}`;
+    }
+
+    console.log(consoleLine);
+    appendLog(fileLine);
+    return;
+  }
+
+  // 3. Parse progress updates from k6 live stream
+  const progressMatch = line.match(/running \((.*?)\), (\d+\/\d+) VUs, (\d+) complete/);
+  if (progressMatch) {
+    const [, time, vus, completed] = progressMatch;
+    const percentMatch = line.match(/\[\s*(\d+%)\s*\]/);
     const percent = percentMatch ? percentMatch[1] : '';
+    const percentText = percent ? ` | İlerleme: \x1b[36m${percent.padEnd(5)}\x1b[0m` : '';
+
+    const progressText = `\x1b[33m⏳ [k6 Test Koşuyor]\x1b[0m Süre: \x1b[32m${time.padEnd(6)}\x1b[0m${percentText} | Aktif Sanal Kullanıcı: \x1b[35m${vus.padEnd(5)}\x1b[0m | Tamamlanan Döngü: \x1b[37m${completed}\x1b[0m`;
 
     if (process.stdout.isTTY) {
       readline.cursorTo(process.stdout, 0);
       readline.clearLine(process.stdout, 0);
-      process.stdout.write(
-        `\x1b[33m⏳ [k6 Test Koşuyor]\x1b[0m Süre: \x1b[32m${time.padEnd(6)}\x1b[0m | İlerleme: \x1b[36m${percent.padEnd(5)}\x1b[0m | Aktif Sanal Kullanıcı: \x1b[35m${vus.padEnd(5)}\x1b[0m | Tamamlanan Döngü: \x1b[37m${completed}\x1b[0m`
-      );
+      process.stdout.write(progressText);
+      hasProgressOnScreen = true;
     } else {
-      process.stdout.write(
-        `\r\x1b[33m⏳ [k6 Test Koşuyor]\x1b[0m Süre: \x1b[32m${time.padEnd(6)}\x1b[0m | İlerleme: \x1b[36m${percent.padEnd(5)}\x1b[0m | Aktif Sanal Kullanıcı: \x1b[35m${vus.padEnd(5)}\x1b[0m | Tamamlanan Döngü: \x1b[37m${completed}\x1b[0m   `
-      );
+      if (lastProgressTime !== time) {
+        lastProgressTime = time;
+        process.stdout.write(`\r${progressText}   `);
+        hasProgressOnScreen = true;
+      }
     }
+    return;
+  }
+
+  // 4. Fallback for other standard errors / info
+  if (!line.includes('default [') && !line.includes('execution: local') && !line.includes('scenarios:')) {
+    // Only pass unhandled non-verbose lines
+    if (line.includes('level=error') || line.includes('ERRO')) {
+      clearProgressLine();
+      console.error(`\x1b[31m[k6 Engine Error]\x1b[0m ${line}`);
+      appendLog(`[ERROR] ${line}`);
+    }
+  }
+}
+
+function handleStreamData(text) {
+  const lines = text.split(/\r?\n/);
+  for (const line of lines) {
+    handleStreamLine(line);
   }
 }
 
@@ -178,24 +265,18 @@ proc.stdout.on('data', (chunk) => {
 });
 
 proc.stderr.on('data', (chunk) => {
-  const errText = chunk.toString();
-  // If k6 emits progress to stderr, route it through handleStreamData
-  if (errText.includes('running (')) {
-    handleStreamData(errText);
-  } else if (!errText.includes('default [')) {
-    process.stderr.write(errText);
-  }
+  handleStreamData(chunk.toString());
 });
 
 proc.on('close', async (code) => {
   if (code !== 0) {
-    appendLog(`[${new Date().toISOString()}] [k6 Runner] Performance test failed or crossed threshold! (Exit code: ${code})`);
+    appendLog(`[${getLocalTimeString()}] [k6 Runner] Performance test failed or crossed threshold! (Exit code: ${code})`);
     console.log(`\n\x1b[31m[k6 Runner] Performance test failed or crossed threshold! (Exit code: ${code})\x1b[0m`);
     console.log(`\x1b[33m[k6 Runner] Capturing visual dashboard failure screenshot...\x1b[0m`);
     await captureFailureScreenshot(timestamp, htmlDir, screenshotsDir);
   } else {
-    appendLog(`[${new Date().toISOString()}] [k6 Runner] Performance test completed successfully. Exit code: 0`);
-    appendLog(`[${new Date().toISOString()}] [k6 Runner] Report generated: reports/performance/html/${timestamp}.html`);
+    appendLog(`[${getLocalTimeString()}] [k6 Runner] Performance test completed successfully. Exit code: 0`);
+    appendLog(`[${getLocalTimeString()}] [k6 Runner] Report generated: reports/performance/html/${timestamp}.html`);
     console.log(`\n\x1b[32m[k6 Runner] Performance HTML Report generated: reports/performance/html/${timestamp}.html\x1b[0m\n`);
   }
 

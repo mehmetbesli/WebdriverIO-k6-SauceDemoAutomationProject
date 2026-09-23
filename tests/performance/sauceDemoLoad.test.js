@@ -2,6 +2,7 @@ import http from 'k6/http';
 import { check, group, sleep } from 'k6';
 import { Trend, Rate, Counter } from 'k6/metrics';
 import { K6_CONFIG } from './config/k6.config.js';
+import { PerfLogger } from './utils/perfLogger.js';
 
 // Custom Performance Metrics
 const pageResponseTime = new Trend('saucedemo_page_response_time', true);
@@ -40,8 +41,10 @@ export default function () {
     if (isOk) {
       successfulRequests.add(1);
       errorRate.add(0);
+      PerfLogger.step(1, 'Ana Sayfa (HTML) indiriliyor...', res);
     } else {
       errorRate.add(1);
+      PerfLogger.error(`Step 1 (Ana Sayfa) doğrulanamadı: Status ${res.status}`);
     }
   });
 
@@ -60,8 +63,10 @@ export default function () {
     if (isOk) {
       successfulRequests.add(1);
       errorRate.add(0);
+      PerfLogger.step(2, 'CSS Stylesheet paketi indiriliyor...', res);
     } else {
       errorRate.add(1);
+      PerfLogger.error(`Step 2 (CSS Paketi) doğrulanamadı: Status ${res.status}`);
     }
   });
 
@@ -80,8 +85,10 @@ export default function () {
     if (isOk) {
       successfulRequests.add(1);
       errorRate.add(0);
+      PerfLogger.step(3, 'React JavaScript uygulama bundle indiriliyor...', res);
     } else {
       errorRate.add(1);
+      PerfLogger.error(`Step 3 (JS Bundle) doğrulanamadı: Status ${res.status}`);
     }
   });
 
@@ -101,8 +108,10 @@ export default function () {
     if (isOk) {
       successfulRequests.add(1);
       errorRate.add(0);
+      PerfLogger.step(4, 'Web App Manifest dosyası kontrol ediliyor...', res);
     } else {
       errorRate.add(1);
+      PerfLogger.error(`Step 4 (Manifest) doğrulanamadı: Status ${res.status}`);
     }
   });
 
@@ -121,11 +130,14 @@ export default function () {
     if (isOk) {
       successfulRequests.add(1);
       errorRate.add(0);
+      PerfLogger.step(5, 'Favicon varlığı kontrol ediliyor...', res);
     } else {
       errorRate.add(1);
+      PerfLogger.error(`Step 5 (Favicon) doğrulanamadı: Status ${res.status}`);
     }
   });
 
+  PerfLogger.success('Kullanıcı döngüsü başarıyla tamamlandı (Tüm SLA eşikleri sağlandı).');
   sleep(1);
 }
 
