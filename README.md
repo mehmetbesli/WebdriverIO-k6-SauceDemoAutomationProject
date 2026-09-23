@@ -210,12 +210,28 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm test` | Varsayılan olarak `npm run test:e2e` komutunu tetikler |
 
 ### Ortama Özel Çalıştırma Komutları (Multi-Environment Commands):
+
+#### 1. Arka Planda (Headless) Koşum:
 | Komut | Açıklama |
 | :--- | :--- |
-| `npm run test:e2e:qa` | **QA** ortamında E2E UI testini koşturur |
-| `npm run test:e2e:staging` | **STAGING** ortamında E2E UI testini koşturur |
-| `npm run test:e2e:prod` | **PROD** ortamında E2E UI testini koşturur |
+| `npm run test:e2e:qa` | **QA** ortamında E2E UI testini koşturur (Headless) |
+| `npm run test:e2e:dev` | **DEV** ortamında E2E UI testini koşturur (Headless) |
+| `npm run test:e2e:staging` | **STAGING** ortamında E2E UI testini koşturur (Headless) |
+| `npm run test:e2e:prod` | **PROD** ortamında E2E UI testini koşturur (Headless) |
+
+#### 2. Ekranda Açarak Canlı İzleme (Headed Chrome):
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run test:e2e:headed:qa` | **QA** ortamında Chrome tarayıcısını ekranda açarak canlı izletir |
+| `npm run test:e2e:headed:dev` | **DEV** ortamında Chrome tarayıcısını ekranda açarak canlı izletir |
+| `npm run test:e2e:headed:staging` | **STAGING** ortamında Chrome tarayıcısını ekranda açarak canlı izletir |
+| `npm run test:e2e:headed:prod` | **PROD** ortamında Chrome tarayıcısını ekranda açarak canlı izletir |
+
+#### 3. k6 Performans & Yük Testi Koşumu:
+| Komut | Açıklama |
+| :--- | :--- |
 | `npm run test:perf:qa` | **QA** ortamında k6 performans testini koşturur |
+| `npm run test:perf:dev` | **DEV** ortamında k6 performans testini koşturur |
 | `npm run test:perf:staging` | **STAGING** ortamında k6 performans testini koşturur |
 | `npm run test:perf:prod` | **PROD** ortamında k6 performans testini koşturur |
 
