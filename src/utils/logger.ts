@@ -132,6 +132,12 @@ export class Logger {
     const tag = Logger.getWorkerTag();
     console.log(`${tag.consoleTag}\x1b[36m[${ts}] 🔹 STEP ${stepNumber}:\x1b[0m ${message}`);
     Logger.writeToFile(`[${ts}] ${tag.fileTag}[STEP ${stepNumber}] ${message}`);
+    try {
+      const allure = require('@wdio/allure-reporter');
+      if (allure && typeof allure.addStep === 'function') {
+        allure.addStep(`STEP ${stepNumber}: ${message}`);
+      }
+    } catch (_) {}
   }
 
   static success(message: string): void {
@@ -140,6 +146,12 @@ export class Logger {
     const tag = Logger.getWorkerTag();
     console.log(`${tag.consoleTag}\x1b[32m[${ts}] ✅ SUCCESS:\x1b[0m ${message}`);
     Logger.writeToFile(`[${ts}] ${tag.fileTag}[SUCCESS] ${message}`);
+    try {
+      const allure = require('@wdio/allure-reporter');
+      if (allure && typeof allure.addStep === 'function') {
+        allure.addStep(`SUCCESS: ${message}`);
+      }
+    } catch (_) {}
   }
 
   static warn(message: string): void {

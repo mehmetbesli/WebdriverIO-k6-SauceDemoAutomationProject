@@ -39,7 +39,9 @@
     "test:perf:qa": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=qa",
     "test:perf:dev": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=dev",
     "test:perf:staging": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=staging",
-    "test:perf:prod": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=prod"
+    "test:perf:prod": "node scripts/run-k6.js run tests/performance/sauceDemoLoad.test.js --env=prod",
+    "report:allure:generate": "allure generate reports/allure-results --clean -o reports/allure-report",
+    "report:allure:open": "allure open reports/allure-report"
   },
   "keywords": [
     "webdriverio",
@@ -55,10 +57,12 @@
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.10",
+    "@wdio/allure-reporter": "^9.32.0",
     "@wdio/cli": "^9.14.0",
     "@wdio/local-runner": "^9.14.0",
     "@wdio/mocha-framework": "^9.14.0",
     "@wdio/spec-reporter": "^9.14.0",
+    "allure-commandline": "^2.46.1",
     "cross-env": "^10.1.0",
     "exceljs": "^4.4.0",
     "ts-node": "^10.9.2",

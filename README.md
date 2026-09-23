@@ -78,7 +78,7 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
   * Tarayıcıya özel W3C yetenekleri (`goog:chromeOptions`, `ms:edgeOptions`, `moz:firefoxOptions`) ile hem headless hem headed desteği.
   * HTML dashboard raporunda her test sonucunun yanında dinamik `🌐 Chrome`, `🌊 Edge`, `🦊 Firefox` rozet gösterimi.
 * **🔄 GitHub Actions CI/CD Pipeline:**
-  * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/test-pipeline.yml`).
+  * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/github-actions.yml`).
 
 ---
 
@@ -88,7 +88,10 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
 WebdriverIO-k6-SauceDemoAutomationProject/
 ├── .github/
 │   └── workflows/
-│       └── test-pipeline.yml         # GitHub Actions CI/CD Pipeline
+│       └── github-actions.yml        # GitHub Actions CI/CD Pipeline
+├── docs/                             # Dokümantasyon, görseller ve örnek test raporları
+│   ├── assets/                       # README için rapor önizleme ekran görüntüleri
+│   └── sample-reports/               # İndirilebilir örnek Allure, Excel ve HTML raporları
 ├── reports/                          # Otomatik üretilen test çıktıları
 │   ├── e2e/
 │   │   ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (E2E HTML raporları)
@@ -241,6 +244,12 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:e2e:spec tests/e2e/sauceDemoLogin.e2e.ts` | Yalnızca belirtilen **tek bir test dosyasını (spec)** koşturur |
 | `npm run test:e2e:headed -- --spec tests/e2e/sauceDemoCart.e2e.ts` | Belirtilen tek test dosyasını **ekranda canlı açarak** koşturur |
 
+### 📊 Allure Raporlama Komutları:
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run report:allure:generate` | `reports/allure-results` verilerinden statik Allure HTML raporu (`reports/allure-report`) derler |
+| `npm run report:allure:open` | Derlenen Allure raporunu yerel web sunucusu olarak ayağa kaldırır ve varsayılan tarayıcıda açar |
+
 ### Ortama Özel Çalıştırma Komutları (Multi-Environment Commands):
 
 #### 1. Arka Planda (Headless) Koşum:
@@ -303,33 +312,78 @@ npx cross-env RETRIES=3 npm run test:e2e:staging
 
 ---
 
+## 📊 Rapor Vitrini & Örnek Çıktılar (Reporting Showcase)
+
+Projeyi inceleyen ekipler için testleri çalıştırmadan doğrudan rapor kalitesini gözlemleyebileceğiniz canlı örnek dosyalar ve arayüz önizlemeleri:
+
+### 📥 İndirilebilir Örnek Rapor Dosyaları (Sample Reports)
+
+| Rapor Türü | Format | İçerik & Özellikler | Doğrudan İndir / İncele |
+| :--- | :---: | :--- | :---: |
+| **Allure Standalone Report** | `.html` | Zaman çizelgesi (Timeline), adım ağaçları (`Logger.step`), pie chart ve süre analizi | [🌐 Sample_Allure_Report.html](docs/sample-reports/Sample_Allure_Report.html) |
+| **E2E Executive Excel Report** | `.xlsx` | Renkli KPI kartları, % Pass Rate, ortam bilgisi ve filtreli detay tablosu | [📊 Sample_E2E_Executive_Report.xlsx](docs/sample-reports/Sample_E2E_Executive_Report.xlsx) |
+| **k6 Performans SLA Excel** | `.xlsx` | P95 yanıt süreleri, SLA hedefleri, istek sayıları ve grup bazlı check detayları | [📈 Sample_Performance_SLA_Report.xlsx](docs/sample-reports/Sample_Performance_SLA_Report.xlsx) |
+| **E2E HTML Dashboard** | `.html` | Paralel koşum metrikleri, ortam rozeti ve adım adım durum kartları | [📑 Sample_E2E_HTML_Dashboard.html](docs/sample-reports/Sample_E2E_HTML_Dashboard.html) |
+| **k6 Performans HTML Dashboard** | `.html` | Grafiksel SLA metrik kartları ve HTTP yanıt süreleri özeti | [⚡ Sample_Performance_Dashboard.html](docs/sample-reports/Sample_Performance_Dashboard.html) |
+
+---
+
+### 📸 Rapor Arayüz Önizlemeleri
+
+#### 1. 🌐 Allure Standalone HTML Portal
+> *Her test koşumu sonrası tek bir bağımsız dosya olarak derlenen, sunucusuz doğrudan tarayıcıda çalışan kurumsal Allure raporu:*
+
+![Allure Standalone Report Preview](docs/assets/allure-report-preview.png)
+
+#### 2. 📊 WebdriverIO Unified HTML Dashboard
+> *Paralel worker süreçlerini tek bir çatı altında toplayan ve ortam etiketlerini taşıyan HTML raporu:*
+
+![E2E HTML Dashboard Preview](docs/assets/e2e-html-report-preview.png)
+
+#### 3. ⚡ Grafana k6 Performans & SLA HTML Dashboard
+> *SLA eşik değerlerini ($p_{95} < 1000\text{ms}$), istek hacmini ve hata oranlarını sunan performans raporu:*
+
+![Performance Dashboard Preview](docs/assets/performance-dashboard-preview.png)
+
+---
+
 ## 📈 Raporlama Çıktıları (Reports Structure)
 
 Test koşumlarının ardından tüm sonuçlar `reports/` dizini altında tarih ve saat formatında (`YYYY-MM-DD_HH-mm-ss`) düzenli bir hiyerarşiyle saklanır:
 
 ```text
 reports/
-├── excel/
-│   ├── YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx  # WebdriverIO E2E Yönetici Özeti ve Test Detayları Excel Raporu
-│   └── YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx # k6 Performans SLA ve Doğrulama Adımları Excel Raporu
+├── allure-results/                       # Allure ham JSON test metrikleri ve ekleri (oturum bazlı temizlenir)
+├── allure-report/
+│   └── YYYY-MM-DD_HH-mm-ss.html          # Bağımsız tek dosya Allure HTML test raporları (geçmiş korunur)
 ├── e2e/
+│   ├── excel/
+│   │   └── YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx  # WebdriverIO E2E Yönetici Özeti ve Test Detayları Excel Raporu
 │   ├── html/
 │   │   └── YYYY-MM-DD_HH-mm-ss.html      # Başarılı / tamamlanan E2E HTML test raporları
+│   ├── logs/
+│   │   └── YYYY-MM-DD_HH-mm-ss.log       # E2E test koşum logları
 │   └── screenshots/
 │       └── YYYY-MM-DD_HH-mm-ss.png       # Testin hata aldığı (fail) anın ekran görüntüleri
 └── performance/
+    ├── excel/
+    │   └── YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx # k6 Performans SLA ve Doğrulama Adımları Excel Raporu
     ├── html/
     │   └── YYYY-MM-DD_HH-mm-ss.html      # k6 Performans & Yük testi HTML Dashboard raporları
+    ├── logs/
+    │   └── YYYY-MM-DD_HH-mm-ss.log       # k6 test koşum logları
     ├── screenshots/
     │   └── YYYY-MM-DD_HH-mm-ss.png       # k6 koşumu fail/threshold aşımı olursa yakalanan ekran görüntüsü
     └── k6-summary.json                   # Detaylı sayaçlar, yüzdelik dilimler ve trendler
 ```
 
-* **Yönetici & QA Excel Raporları (`reports/excel/`):** Test koşumunun hemen ardından oluşturulan kurumsal `.xlsx` çalışma kitapları:
-  * **E2E Excel Raporu (`YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx`):**
+* **Allure Reporter (`reports/allure-report/`):** Her test koşumu sonrasında tarih ve saat formatıyla (`YYYY-MM-DD_HH-mm-ss.html`) bağımsız tek dosya halinde otomatik derlenir. Önceki raporların üzerine yazılmaz, tam yürütme geçmişi korunur. Paralel worker yürütme zaman çizelgesi (Timeline/Gantt Chart), açılır-kapanır hiyerarşik adım ağaçları (`Logger.step`), pasta grafikleri, süre dağılım analizleri ve gömülü hata ekran görüntüleri sunar.
+
+* **Yönetici & QA Excel Raporları (`reports/e2e/excel/` & `reports/performance/excel/`):** Test koşumunun hemen ardından oluşturulan kurumsal `.xlsx` çalışma kitapları:
+  * **E2E Excel Raporu (`reports/e2e/excel/YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx`):**
     * **Executive Dashboard:** Testin koşulduğu ortam (`QA`, `DEV`, `PROD`), hedef URL, işletim sistemi, koşum modu, toplam süre, başarı oranı (% Pass Rate) ve renkli KPI kartları (`Passed`, `Failed`, `Flaky`).
     * **E2E Test Details:** Her bir test için `🌍 Ortam`, `Test Suite`, `Case ID (TC01..TC05)`, `Test Başlığı`, `Tarayıcı (Chrome/Edge/Firefox)`, `Durum (Passed/Failed)`, `Süre (sn)`, `Hata Mesajı` ve hata durumunda ilgili ekran görüntüsüne doğrudan tıklanabilir `📸 Ekran Görüntüsü` köprüsü içerir. Tabloda Excel otomatik filtreleme (Auto-filter) açıktır.
-  * **Performans Excel Raporu (`YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx`):**
+  * **Performans Excel Raporu (`reports/performance/excel/YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx`):**
     * **Performance Dashboard:** Aktif ortam (`QA`, `DEV` vb.), hedef URL, toplam test süresi, genel SLA uyumluluk durumu (`PASSED/FAILED`), P95 yanıt süresi, ortalama gecikme, min/max süreler, hata oranı ve toplam HTTP istek sayısı.
     * **Step & Check Details:** Senaryodaki tüm performans grupları (`01_LandingPage_HTML`..`05_Favicon_Asset`), her grubun doğrulama kriterleri (`check`), başarılı/başarısız istek sayıları, başarı yüzdeleri ve durum rozetleri (`PASSED/FAILED`). Otomatik filtreleme (Auto-filter) desteklidir.
 * **E2E HTML Raporu (`reports/e2e/html/`):** Test metriklerini (Total Tests, Passed, Failed, Flaky / Retried, Total Duration), aktif ortam rozetini (`ENV: QA / STAGING / PROD`), test adımlarını ve varsa hata detaylarını modern 5'li KPI kartları ve detay tablosuyla sunar.
@@ -339,13 +393,24 @@ reports/
 
 ---
 
-## 🔄 CI/CD Pipeline Entegrasyonu
+## 🔄 CI/CD Pipeline Entegrasyonu (GitHub Actions)
 
-Proje, GitHub Actions üzerinde otomatik olarak çalışacak şekilde `.github/workflows/test-pipeline.yml` dosyası ile yapılandırılmıştır:
-1. Kod push veya pull request yapıldığında tetiklenir.
-2. Ubuntu ortamında Node.js ve k6 CLI araçlarını kurar.
-3. E2E ve performans testlerini çalıştırır.
-4. Raporları test artefaktı (`test-reports`) olarak GitHub üzerinden indirilebilir şekilde saklar.
+Proje, GitHub Actions üzerinde tam otomatik veya parametrik manuel tetiklenecek şekilde [`.github/workflows/github-actions.yml`](.github/workflows/github-actions.yml) dosyası ile yapılandırılmıştır:
+
+1. **Çoklu Tetikleme Mekanizmaları:**
+   * **Otomatik Tetikleme:** `main` veya `master` dallarına yapılan `push` ve `pull_request` işlemlerinde otomatik devreye girer.
+   * **Dinamik Manuel Çalıştırma (`workflow_dispatch`):** GitHub Actions UI arayüzünden tek tıkla parametre seçimi:
+     * 🌍 **Ortam:** `qa`, `dev`, `staging`, `prod`
+     * 🧪 **Test Paketi:** `all` (E2E + Perf), `e2e` (yalnızca E2E), `performance` (yalnızca k6)
+     * 🌐 **Tarayıcı:** `chrome`, `firefox`
+2. **Derleme ve Çalıştırma Ortamı:**
+   * `ubuntu-latest` üzerinde Node.js 20, OpenJDK 17 (Allure CLI için) ve Grafana k6 motorunu otomatik kurar.
+3. **Otomatik Özet Panosu (`$GITHUB_STEP_SUMMARY`):**
+   * Her koşum sonunda GitHub Actions sayfasında interaktif Markdown tablosu üretir; E2E ve K6 SLA durumunu anında gösterir.
+4. **Kategorize Edilmiş İndirilebilir Çıktılar (Artifacts):**
+   * 🌐 **`allure-standalone-report`:** Tek dosya bağımsız Allure HTML portalı (CORS veya sunucu gerektirmez, doğrudan açılabilir).
+   * 📊 **`executive-excel-reports`:** E2E ve Performans için üretilen kurumsal `.xlsx` çalışma kitapları.
+   * 📈 **`full-test-reports`:** Özel HTML dashboard'ları, execution logları ve hata ekran görüntüleri (14 gün saklama süresi).
 
 ---
 
@@ -403,8 +468,8 @@ Bu bölüm, projeyi inceleyen geliştiricilerin ve test mühendislerinin projeni
 * Test koşumu esnasında sessiz kalmayı veya konsol kirliliğini önlemek için canlı, tek satırda güncellenen bir ilerleme göstergesi (`⏳ [k6 Test Koşuyor] Süre: ... | İlerleme: ... | Aktif VU: ...`) ve bitiminde sade bir ASCII metrik tablosu konsola yansıtıldı.
 * Koşum sonunda hem konsol metrik tablosu hem de modern kartlara sahip `reports/performance/html/YYYY-MM-DD_HH-mm-ss.html` dashboard raporu üretildi. Olası bir hata/eşik aşımı durumunda headless Chrome ile anlık ekran görüntüsü `reports/performance/screenshots/` altına kaydedilecek şekilde otomatik kanca yazıldı.
 
-### 6. 🚀 CI/CD Pipeline
-* `.github/workflows/test-pipeline.yml` tanımlanarak projenin Ubuntu ortamında Node.js 20 ve k6 ile uçtan uca otomatik test koşumu ve rapor arşivleme yeteneği sağlandı.
+### 6. 🚀 CI/CD Pipeline (GitHub Actions)
+* `.github/workflows/github-actions.yml` tanımlanarak projenin Ubuntu ortamında Node.js 20, Java 17 ve k6 ile uçtan uca otomatik test koşumu, parametrik workflow_dispatch desteği, Allure/Excel/HTML rapor üretimi ve GitHub Actions Step Summary entegrasyonu sağlandı.
 
 ### 7. 🌐 Çoklu Test Ortamı Desteği (Multi-Environment Architecture)
 * WebdriverIO ve k6 testleri için merkezi ortam konfigürasyonu (`src/config/environment.ts`) geliştirildi.

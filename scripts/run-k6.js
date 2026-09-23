@@ -283,7 +283,7 @@ proc.on('close', async (code) => {
 
   // Generate Performance Excel Report (.xlsx)
   const summaryJsonPath = path.resolve(__dirname, '../reports/performance/k6-summary.json');
-  const excelDir = path.resolve(__dirname, '../reports/excel');
+  const excelDir = path.resolve(__dirname, '../reports/performance/excel');
   const excelFile = path.resolve(excelDir, `${timestamp}_PERF_${testEnv.toUpperCase()}.xlsx`);
 
   if (fs.existsSync(summaryJsonPath)) {
@@ -296,7 +296,7 @@ proc.on('close', async (code) => {
         timestamp,
         outputPath: excelFile,
       });
-      appendLog(`[${getLocalTimeString()}] [k6 Runner] Performance Excel Report generated: reports/excel/${timestamp}_PERF_${testEnv.toUpperCase()}.xlsx`);
+      appendLog(`[${getLocalTimeString()}] [k6 Runner] Performance Excel Report generated: reports/performance/excel/${timestamp}_PERF_${testEnv.toUpperCase()}.xlsx`);
       console.log(`\x1b[32m[k6 Runner] Performance Excel Report generated: ${excelFile}\x1b[0m\n`);
     } catch (excelErr) {
       appendLog(`[${getLocalTimeString()}] [k6 Runner] Failed to generate Performance Excel report: ${excelErr.message}`);

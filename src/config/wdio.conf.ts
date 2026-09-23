@@ -90,7 +90,24 @@ export const config: WebdriverIO.Config = {
   connectionRetryTimeout: 120000,
   connectionRetryCount: 3,
   framework: 'mocha',
-  reporters: ['spec'],
+  reporters: [
+    'spec',
+    [
+      'allure',
+      {
+        outputDir: 'reports/allure-results',
+        disableWebdriverStepsReporting: true,
+        disableWebdriverScreenshotsReporting: false,
+        useCucumberStepReporter: false,
+        reportedEnvironmentVars: {
+          Environment: envName.toUpperCase(),
+          Browser: targetBrowser.toUpperCase(),
+          Base_URL: activeEnv.baseUrl,
+          Platform: 'Windows 11',
+        },
+      },
+    ],
+  ],
   mochaOpts: {
     ui: 'bdd',
     timeout: 60000,
@@ -109,6 +126,13 @@ export const config: WebdriverIO.Config = {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
     fs.mkdirSync(tempDir, { recursive: true });
+
+    // Clean up Allure raw results from previous runs for a fresh execution session
+    const allureResultsDir = path.resolve(process.cwd(), 'reports/allure-results');
+    if (fs.existsSync(allureResultsDir)) {
+      fs.rmSync(allureResultsDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(allureResultsDir, { recursive: true });
   },
 
   beforeSuite: function (suite) {
@@ -152,6 +176,11 @@ export const config: WebdriverIO.Config = {
         relativeScreenshotPath = `../screenshots/${screenshotFileName}`;
         Logger.error(`[Test Failed] "${test.title}" [${currentBrowser}] failed after all ${limit + 1} attempts. Error: ${(error as Error)?.message}`, error);
         Logger.warn(`[Final Failure Screenshot Captured] Saved at: ${fullScreenshotPath}`);
+
+        try {
+          const allure = require('@wdio/allure-reporter');
+          allure.addAttachment('Failure Screenshot', fs.readFileSync(fullScreenshotPath), 'image/png');
+        } catch (_) {}
       }
     } else {
       Logger.success(`[Test Passed] "${test.title}" [${currentBrowser}] finished in ${((duration || 0) / 1000).toFixed(2)}s${isFlaky ? ` (Resolved after retry #${attempts})` : ''}`);
@@ -228,7 +257,7 @@ export const config: WebdriverIO.Config = {
 
     if (allResults.length > 0) {
       const htmlDir = path.resolve(process.cwd(), 'reports/e2e/html');
-      const excelDir = path.resolve(process.cwd(), 'reports/excel');
+      const excelDir = path.resolve(process.cwd(), 'reports/e2e/excel');
       if (!fs.existsSync(htmlDir)) {
         fs.mkdirSync(htmlDir, { recursive: true });
       }
@@ -260,11 +289,43 @@ export const config: WebdriverIO.Config = {
         Logger.error('Failed to generate Excel report:', excelErr);
       }
 
+      // 3. Automatically Generate Allure Standalone HTML Report (Timestamped)
+      try {
+        const { execSync, exec } = require('child_process');
+        const allureOutputDir = path.resolve(process.cwd(), 'reports/allure-report');
+        const tempAllureDir = path.resolve(process.cwd(), 'reports/.allure-tmp');
+
+        if (!fs.existsSync(allureOutputDir)) {
+          fs.mkdirSync(allureOutputDir, { recursive: true });
+        }
+
+        execSync(`npx allure generate reports/allure-results --clean --single-file -o "${tempAllureDir}"`, {
+          stdio: 'ignore',
+        });
+
+        const tempIndexHtml = path.resolve(tempAllureDir, 'index.html');
+        if (fs.existsSync(tempIndexHtml)) {
+          const allureHtmlPath = path.resolve(allureOutputDir, `${timestamp}.html`);
+          fs.copyFileSync(tempIndexHtml, allureHtmlPath);
+          fs.rmSync(tempAllureDir, { recursive: true, force: true });
+
+          Logger.info(`[Allure HTML Report Generated] ${allureHtmlPath}`);
+          console.log(`\x1b[35m[Allure Reporter] Allure Standalone HTML Report generated: ${allureHtmlPath}\x1b[0m\n`);
+
+          // Automatically open the report in the default browser (unless disabled or in CI)
+          if (!process.env.CI && process.env.AUTO_OPEN !== 'false') {
+            exec(`start "" "${allureHtmlPath}"`);
+          }
+        }
+      } catch (allureErr) {
+        Logger.error('Failed to automatically generate Allure report:', allureErr);
+      }
+
       Logger.info(`[All Parallel Workers Finished] Total Tests: ${allResults.length}`);
       Logger.info(`[Unified HTML Report Generated] ${reportFile}`);
       Logger.info(`[Executive Excel Report Generated] ${excelFile}`);
       Logger.info(`[Execution Log File] ${Logger.getLogFilePath()}`);
-      console.log(`\n\x1b[32m[E2E Reporter] Unified HTML Report generated: ${reportFile}\x1b[0m`);
+      console.log(`\x1b[32m[E2E Reporter] Unified HTML Report generated: ${reportFile}\x1b[0m`);
       console.log(`\x1b[32m[E2E Reporter] Executive Excel Report generated: ${excelFile}\x1b[0m\n`);
     }
   },

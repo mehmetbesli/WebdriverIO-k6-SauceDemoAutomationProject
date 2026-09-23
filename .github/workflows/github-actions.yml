@@ -1,0 +1,160 @@
+name: SauceDemo CI/CD Test Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Test Environment'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - dev
+          - staging
+          - prod
+      test_type:
+        description: 'Test Suite to Execute'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - e2e
+          - performance
+      browser:
+        description: 'Target Browser for E2E Tests'
+        required: true
+        default: 'chrome'
+        type: choice
+        options:
+          - chrome
+          - firefox
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  automation-tests:
+    name: Run Automated Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CI: 'true'
+      AUTO_OPEN: 'false'
+      TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
+      BROWSER: ${{ github.event.inputs.browser || 'chrome' }}
+      TEST_TYPE: ${{ github.event.inputs.test_type || 'all' }}
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: ☕ Setup Java 17 (Required for Allure CLI)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: ⚡ Setup Grafana k6 CLI
+        uses: grafana/setup-k6-action@v1
+
+      - name: 📦 Install Node Dependencies
+        run: npm ci
+
+      - name: 🧪 Run WebdriverIO E2E Tests
+        id: e2e_step
+        if: env.TEST_TYPE == 'all' || env.TEST_TYPE == 'e2e'
+        run: |
+          echo "Starting E2E Tests on Environment: $TEST_ENV | Browser: $BROWSER"
+          npm run test:e2e
+        continue-on-error: true
+
+      - name: 🚀 Run Grafana k6 Performance Tests
+        id: perf_step
+        if: env.TEST_TYPE == 'all' || env.TEST_TYPE == 'performance'
+        run: |
+          echo "Starting k6 Performance Tests on Environment: $TEST_ENV"
+          npm run test:perf
+        continue-on-error: true
+
+      - name: 📊 Generate GitHub Actions Summary
+        if: always()
+        run: |
+          echo "## 🚀 SauceDemo Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`${{ env.TEST_ENV }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Browser** | \`${{ env.BROWSER }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Test Suite** | \`${{ env.TEST_TYPE }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Triggered By** | \`${{ github.actor }}\` (\`${{ github.event_name }}\`) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Component | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :---: | :--- |" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.e2e_step.outcome }}" == "success" ]; then
+            echo "| **WebdriverIO E2E** | 🟢 **PASSED** | All UI & Business Flow test cases passed successfully |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.e2e_step.outcome }}" == "failure" ]; then
+            echo "| **WebdriverIO E2E** | 🔴 **FAILED** | One or more E2E test cases failed. Inspect artifacts for screenshots & logs |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **WebdriverIO E2E** | ⚪ **SKIPPED** | Not selected in this execution |" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ steps.perf_step.outcome }}" == "success" ]; then
+            echo "| **Grafana k6 Performance** | 🟢 **PASSED** | All SLA thresholds (p95 < 1000ms, error rate < 5%) met |" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.perf_step.outcome }}" == "failure" ]; then
+            echo "| **Grafana k6 Performance** | 🔴 **FAILED** | Performance thresholds breached or requests failed |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "| **Grafana k6 Performance** | ⚪ **SKIPPED** | Not selected in this execution |" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📑 Available Artifacts in this Run" >> $GITHUB_STEP_SUMMARY
+          echo "- 🌐 **Allure Standalone Report**: Interactive single-file HTML report with timeline & steps" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 **Executive Excel Reports**: Spreadsheet dashboard with pass rates, KPIs, and failure links" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 **Full Test Reports & Logs**: Complete HTML dashboards, raw logs, and failure screenshots" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📤 Upload Allure HTML Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-standalone-report
+          path: reports/allure-report/
+          retention-days: 14
+
+      - name: 📤 Upload Executive Excel Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: executive-excel-reports
+          path: |
+            reports/e2e/excel/*.xlsx
+            reports/performance/excel/*.xlsx
+          retention-days: 14
+
+      - name: 📤 Upload Full Test Reports & Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-test-reports
+          path: reports/
+          retention-days: 14
+
+      - name: ❌ Fail Pipeline If Any Test Failed
+        if: steps.e2e_step.outcome == 'failure' || steps.perf_step.outcome == 'failure'
+        run: |
+          echo "::error::One or more test suites failed. Check artifacts for complete details."
+          exit 1
