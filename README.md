@@ -227,6 +227,14 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:all` | **Hem WebdriverIO E2E hem de k6 Performans testlerini ardışık olarak koşturur** |
 | `npm test` | Varsayılan olarak `npm run test:e2e` komutunu tetikler |
 
+### 🎯 Tekli / Spesifik Test Case Koşma Komutları:
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run test:e2e:case "TC02"` | Yalnızca başlığında `"TC02"` geçen **tek bir test senaryosunu** koşturur |
+| `npm run test:e2e:headed:case "TC01"` | Belirtilen spesifik test senaryosunu **ekranda canlı açarak** izletir |
+| `npm run test:e2e:spec tests/e2e/sauceDemoLogin.e2e.ts` | Yalnızca belirtilen **tek bir test dosyasını (spec)** koşturur |
+| `npm run test:e2e:headed -- --spec tests/e2e/sauceDemoCart.e2e.ts` | Belirtilen tek test dosyasını **ekranda canlı açarak** koşturur |
+
 ### Ortama Özel Çalıştırma Komutları (Multi-Environment Commands):
 
 #### 1. Arka Planda (Headless) Koşum:

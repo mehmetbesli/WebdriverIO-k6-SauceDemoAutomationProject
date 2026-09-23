@@ -9,6 +9,8 @@
     "test:e2e": "wdio run ./src/config/wdio.conf.ts",
     "test:e2e:headed": "cross-env HEADLESS=false wdio run ./src/config/wdio.conf.ts",
     "test:e2e:spec": "wdio run ./src/config/wdio.conf.ts --spec",
+    "test:e2e:case": "wdio run ./src/config/wdio.conf.ts --mochaOpts.grep",
+    "test:e2e:headed:case": "cross-env HEADLESS=false wdio run ./src/config/wdio.conf.ts --mochaOpts.grep",
     "test:e2e:qa": "cross-env TEST_ENV=qa wdio run ./src/config/wdio.conf.ts",
     "test:e2e:dev": "cross-env TEST_ENV=dev wdio run ./src/config/wdio.conf.ts",
     "test:e2e:staging": "cross-env TEST_ENV=staging wdio run ./src/config/wdio.conf.ts",
