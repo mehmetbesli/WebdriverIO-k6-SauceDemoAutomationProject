@@ -271,7 +271,7 @@ reports/
     └── k6-summary.json                   # Detaylı sayaçlar, yüzdelik dilimler ve trendler
 ```
 
-* **E2E HTML Raporu (`reports/e2e/html/`):** Test metriklerini, toplam test süresini, test adımlarını ve varsa hata detaylarını modern bir tabloda sunar.
+* **E2E HTML Raporu (`reports/e2e/html/`):** Test metriklerini (Total Tests, Passed, Failed, Flaky / Retried, Total Duration), aktif ortam rozetini (`ENV: QA / STAGING / PROD`), test adımlarını ve varsa hata detaylarını modern 5'li KPI kartları ve detay tablosuyla sunar.
 * **E2E Hata Ekran Görüntüleri (`reports/e2e/screenshots/`):** Bir adım hata aldığında (`afterTest` kancasında) otomatik olarak o anın ekran görüntüsünü tarih-saat ismiyle kaydeder ve HTML raporuna bağlar.
 * **k6 Performans HTML Dashboard (`reports/performance/html/`):** $p_{95}$ yanıt sürelerini, ortalama gecikmeyi, istek sayısını ve hata oranlarını görsel metrik kartlarıyla gösterir.
 * **k6 Hata Ekran Görüntüleri (`reports/performance/screenshots/`):** Performans testi SLA eşik değerini (P95 yanıt süresi, hata oranı vb.) aşarsa veya hata alırsa; WebdriverIO motoru otomatik olarak devreye girerek testin **kırmızı FAILED rozetli metrik dashboard'unun ve ihlal edilen SLA maddelerinin tam ekran görüntüsünü** tarih-saat formatıyla (`YYYY-MM-DD_HH-mm-ss.png`) kaydeder. Rapor oluşmadan k6 çökerse hedef web sitesinin canlı hata ekranını yakalar.

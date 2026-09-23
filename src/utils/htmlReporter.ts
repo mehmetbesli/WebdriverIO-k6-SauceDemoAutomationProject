@@ -22,6 +22,7 @@ export function generateE2EHtmlReport(
   const total = results.length;
   const passed = results.filter((r) => r.passed).length;
   const failed = results.filter((r) => !r.passed).length;
+  const flaky = results.filter((r) => r.isFlaky || (r.passed && (r.retries || 0) > 0)).length;
   const totalDuration = (results.reduce((acc, r) => acc + r.duration, 0) / 1000).toFixed(2);
   const statusClass = failed === 0 ? 'status-pass' : 'status-fail';
   const statusText = failed === 0 ? 'PASSED' : 'FAILED';
@@ -74,10 +75,11 @@ export function generateE2EHtmlReport(
     .status-badge { font-weight: 700; font-size: 14px; padding: 6px 16px; border-radius: 9999px; }
     .status-pass { background: #dcfce7; color: #15803d; }
     .status-fail { background: #fee2e2; color: #b91c1c; }
-    .metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+    .metrics-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-bottom: 28px; }
     .metric-card { background: #f1f5f9; padding: 18px; border-radius: 8px; text-align: center; border-left: 4px solid #3b82f6; }
     .metric-card.pass { border-left-color: #22c55e; }
     .metric-card.fail { border-left-color: #ef4444; }
+    .metric-card.flaky { border-left-color: #f59e0b; }
     .metric-label { font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; }
     .metric-val { font-size: 28px; font-weight: 800; color: #0f172a; margin-top: 6px; }
     table { width: 100%; border-collapse: collapse; margin-top: 16px; }
@@ -101,6 +103,7 @@ export function generateE2EHtmlReport(
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <span style="background: #e0e7ff; color: #3730a3; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px;">ENV: ${environment.toUpperCase()}</span>
+        ${flaky > 0 ? `<span style="background: #fef3c7; color: #b45309; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px;">FLAKY: ${flaky}</span>` : ''}
         <div class="status-badge ${statusClass}">${statusText}</div>
       </div>
     </div>
@@ -109,6 +112,7 @@ export function generateE2EHtmlReport(
       <div class="metric-card"><div class="metric-label">Total Tests</div><div class="metric-val">${total}</div></div>
       <div class="metric-card pass"><div class="metric-label">Passed</div><div class="metric-val">${passed}</div></div>
       <div class="metric-card ${failed > 0 ? 'fail' : ''}"><div class="metric-label">Failed</div><div class="metric-val">${failed}</div></div>
+      <div class="metric-card ${flaky > 0 ? 'flaky' : ''}"><div class="metric-label">Flaky / Retried</div><div class="metric-val" style="${flaky > 0 ? 'color: #d97706;' : ''}">${flaky}</div></div>
       <div class="metric-card"><div class="metric-label">Total Duration</div><div class="metric-val">${totalDuration}s</div></div>
     </div>
 
