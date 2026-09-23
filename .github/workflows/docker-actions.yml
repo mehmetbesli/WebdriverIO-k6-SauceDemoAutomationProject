@@ -39,6 +39,14 @@ on:
           - all
           - e2e
           - performance
+      browser:
+        description: 'Target Browser for E2E Tests'
+        required: true
+        default: 'chrome'
+        type: choice
+        options:
+          - chrome
+          - firefox          
 
 jobs:
   docker-tests:
