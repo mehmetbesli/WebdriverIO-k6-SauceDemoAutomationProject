@@ -238,7 +238,7 @@ export const config: WebdriverIO.Config = {
 
       const timestamp = Logger.getSessionTimestamp();
       const reportFile = path.resolve(htmlDir, `${timestamp}.html`);
-      const excelFile = path.resolve(excelDir, `${timestamp}_${envName.toUpperCase()}.xlsx`);
+      const excelFile = path.resolve(excelDir, `${timestamp}_E2E_${envName.toUpperCase()}.xlsx`);
       const reportTitle = targetBrowser === 'all' ? 'SauceDemo Multi-Browser E2E Report' : 'SauceDemo E2E Test Suite';
 
       // 1. Generate Unified HTML Report

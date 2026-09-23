@@ -310,7 +310,7 @@ Test koşumlarının ardından tüm sonuçlar `reports/` dizini altında tarih v
 ```text
 reports/
 ├── excel/
-│   ├── YYYY-MM-DD_HH-mm-ss_ENV.xlsx      # WebdriverIO E2E Yönetici Özeti ve Test Detayları Excel Raporu
+│   ├── YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx  # WebdriverIO E2E Yönetici Özeti ve Test Detayları Excel Raporu
 │   └── YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx # k6 Performans SLA ve Doğrulama Adımları Excel Raporu
 ├── e2e/
 │   ├── html/
@@ -326,7 +326,7 @@ reports/
 ```
 
 * **Yönetici & QA Excel Raporları (`reports/excel/`):** Test koşumunun hemen ardından oluşturulan kurumsal `.xlsx` çalışma kitapları:
-  * **E2E Excel Raporu (`YYYY-MM-DD_HH-mm-ss_ENV.xlsx`):**
+  * **E2E Excel Raporu (`YYYY-MM-DD_HH-mm-ss_E2E_ENV.xlsx`):**
     * **Executive Dashboard:** Testin koşulduğu ortam (`QA`, `DEV`, `PROD`), hedef URL, işletim sistemi, koşum modu, toplam süre, başarı oranı (% Pass Rate) ve renkli KPI kartları (`Passed`, `Failed`, `Flaky`).
     * **E2E Test Details:** Her bir test için `🌍 Ortam`, `Test Suite`, `Case ID (TC01..TC05)`, `Test Başlığı`, `Tarayıcı (Chrome/Edge/Firefox)`, `Durum (Passed/Failed)`, `Süre (sn)`, `Hata Mesajı` ve hata durumunda ilgili ekran görüntüsüne doğrudan tıklanabilir `📸 Ekran Görüntüsü` köprüsü içerir. Tabloda Excel otomatik filtreleme (Auto-filter) açıktır.
   * **Performans Excel Raporu (`YYYY-MM-DD_HH-mm-ss_PERF_ENV.xlsx`):**
