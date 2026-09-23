@@ -45,6 +45,11 @@ export function generateE2EHtmlReport(
         }
       }
 
+      const cleanError = (r.error || 'Unknown error')
+        .replace(/\u001b\[[0-9;]*m/g, '')
+        .replace(/\[\d+m/g, '')
+        .replace(/\[\d+;\d+m/g, '');
+
       return `
       <tr>
         <td>${i + 1}</td>
@@ -56,7 +61,7 @@ export function generateE2EHtmlReport(
           ${
             r.passed
               ? `<span style="color:#16a34a">✓ No Errors${r.isFlaky ? ` (Resolved after retry #${r.retries})` : ''}</span>`
-              : `<div class="error-msg">${r.error || 'Unknown error'}</div>
+              : `<div class="error-msg">${cleanError}</div>
                  ${r.retries && r.retries > 0 ? `<div style="color:#dc2626; font-size:12px; font-weight:600; margin-bottom:4px;">❌ Failed after ${r.retries + 1} total attempts (${r.retries} retries)</div>` : ''}
                  ${
                    r.screenshot
