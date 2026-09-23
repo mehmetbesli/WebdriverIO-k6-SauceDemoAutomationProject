@@ -1,8 +1,8 @@
 import { $, $$ } from '@wdio/globals';
-import { BasePage } from './base/BasePage';
-import { HeaderComponent } from './components/HeaderComponent';
-import { MenuComponent } from './components/MenuComponent';
-import { ROUTES } from '../constants/routes';
+import { BasePage } from '../base/BasePage';
+import { HeaderComponent } from '../components/HeaderComponent';
+import { MenuComponent } from '../components/MenuComponent';
+import { ROUTES } from '../../constants/routes';
 
 /**
  * Page Object representing SauceDemo Products / Inventory Page

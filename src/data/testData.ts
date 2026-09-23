@@ -1,24 +1,20 @@
+import { getCurrentEnvironment } from '../config/environment';
+
 /**
  * Centralized Test Data Models and Parametric Data for Tests
+ * Dynamically resolves user credentials from active environment
  */
 export const TEST_DATA = {
-  USERS: {
-    STANDARD: {
-      username: 'standard_user',
-      password: 'secret_sauce',
-    },
-    LOCKED_OUT: {
-      username: 'locked_out_user',
-      password: 'secret_sauce',
-    },
-    PROBLEM: {
-      username: 'problem_user',
-      password: 'secret_sauce',
-    },
-    PERFORMANCE_GLITCH: {
-      username: 'performance_glitch_user',
-      password: 'secret_sauce',
-    },
+  get USERS() {
+    const env = getCurrentEnvironment();
+    return {
+      STANDARD: env.users.standard,
+      LOCKED_OUT: env.users.lockedOut,
+      PROBLEM: env.users.problem,
+      PERFORMANCE_GLITCH: env.users.performanceGlitch,
+      ERROR: env.users.error,
+      VISUAL: env.users.visual,
+    };
   },
   CHECKOUT_CUSTOMER: {
     firstName: 'John',
@@ -37,4 +33,4 @@ export const TEST_DATA = {
       idSlug: 'sauce-labs-bike-light',
     },
   ],
-} as const;
+};

@@ -1,0 +1,9 @@
+export { BasePage } from './base/BasePage';
+export { HeaderComponent } from './components/HeaderComponent';
+export { MenuComponent } from './components/MenuComponent';
+export { LoginPage } from './login/LoginPage';
+export { InventoryPage } from './inventory/InventoryPage';
+export { CartPage } from './cart/CartPage';
+export { CheckoutStepOnePage } from './checkout-step-one/CheckoutStepOnePage';
+export { CheckoutStepTwoPage } from './checkout-step-two/CheckoutStepTwoPage';
+export { CheckoutCompletePage } from './checkout-complete/CheckoutCompletePage';

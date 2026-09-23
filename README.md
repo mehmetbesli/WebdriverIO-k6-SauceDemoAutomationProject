@@ -6,14 +6,17 @@ Bu proje, [SauceDemo](https://www.saucedemo.com/) e-ticaret platformu için geli
 
 ## 📑 İçindekiler
 - [🛠️ Teknoloji Yığını (Tech Stack)](#️-teknoloji-yığını-tech-stack)
+- [✨ Öne Çıkan Özellikler ve Yetenekler (Key Features)](#-öne-çıkan-özellikler-ve-yetenekler-key-features)
 - [📂 Proje Mimarisi](#-proje-mimarisi)
 - [🧪 Test Senaryoları](#-test-senaryoları)
 - [📊 Performans Eşik Değerleri (Thresholds)](#-performans-eşik-değerleri-thresholds)
 - [⚙️ Kurulum ve Ön Koşullar](#️-kurulum-ve-ön-koşullar)
+- [🌐 Çoklu Test Ortamı Desteği (Multi-Environment)](#-çoklu-test-ortamı-desteği-multi-environment)
 - [🚀 Testleri Çalıştırma](#-testleri-çalıştırma)
 - [📈 Raporlama Çıktıları](#-raporlama-çıktıları)
 - [🔄 CI/CD Pipeline Entegrasyonu](#-cicd-pipeline-entegrasyonu)
 - [🎯 Tasarım Prensipleri](#-tasarım-prensipleri)
+- [📝 Geliştirme Notları ve Yapılan İşlemler (Engineering Log)](#-geliştirme-notları-ve-yapılan-işlemler-engineering-log)
 
 ---
 
@@ -30,6 +33,39 @@ Bu proje, [SauceDemo](https://www.saucedemo.com/) e-ticaret platformu için geli
 
 ---
 
+## ✨ Öne Çıkan Özellikler ve Yetenekler (Key Features)
+
+Projede geliştirilen ve kullanıma sunulan temel özellikler:
+
+* **🖥️ Canlı Ekran İzleme & Headless Mod Desteği:**
+  * `npm run test:e2e:headed` komutu ile Chrome tarayıcısı ekranda açılarak tüm satın alma akışı (tıklamalar, form doldurma, sepet kontrolleri) canlı izlenebilir.
+  * `npm run test:e2e` komutu ile arka planda hızlı ve kaynak tüketmeyen headless test koşumu sağlanır.
+* **📂 Domain-Based Sayfa Mimarisi & Barrel Export:**
+  * Her bir web sayfası kendine ait bağımsız bir klasörde (`login/`, `inventory/`, `cart/`, `checkout-step-one/`, `checkout-step-two/`, `checkout-complete/`) yapılandırılmıştır.
+  * `src/pages/index.ts` merkezi barrel export dosyası sayesinde test senaryolarında import satırları tek satıra indirilmiştir.
+* **⚡ Grafana k6 ile Çok Aşamalı Performans Testi:**
+  * SauceDemo React SPA mimarisine uygun şekilde HTML dokümanı, CSS paketi, React JS bundle, Web manifest ve Favicon varlıkları için aşamalı (Ramp-up $\rightarrow$ Steady $\rightarrow$ Ramp-down) yük testi.
+  * Yanıt süreleri ($p_{95} < 1000\text{ ms}$), hata oranı ($< \%5$) ve doğrulama metriklerinin takibi.
+* **📊 Otomatik HTML Dashboard & JSON Performans Raporlama:**
+  * k6 koşumu tamamlandığında `reports/performance/html/YYYY-MM-DD_HH-mm-ss.html` dosyasında modern kartlı bir HTML dashboard raporu otomatik üretilir.
+  * CI/CD entegrasyonu ve metrik analizleri için `reports/performance/k6-summary.json` metrik dosyası oluşturulur.
+* **🛡️ Flaky-Free Dayanıklı Bekleme Mekanizması (Resilient Waiting):**
+  * SPA sayfa geçişlerinde yarış durumlarını (race condition) ve kararsız testleri önlemek amacıyla `BasePage` sınıfında dinamik 10 saniyelik görünürlük beklemesi (`waitForDisplayed`) entegre edilmiştir.
+* **📝 Zaman Damgalı ve Renkli Adım Loglayıcı (`Logger`):**
+  * Testin hangi adımda olduğunu konsolda mavi/yeşil/kırmızı renkler, zaman damgaları ve emojilerle net gösteren adım logger'ı (`src/utils/logger.ts`).
+* **🏷️ Merkezi Sabitler ve Test Verisi İzolasyonu:**
+  * URL rotaları (`src/constants/routes.ts`), UI başlık ve metinleri (`src/constants/messages.ts`), kullanıcı ve sipariş verileri (`src/data/testData.ts`) test kodlarından tamamen ayrıştırılmıştır.
+* **🛠️ Akıllı k6 Koşucu Betiği (`scripts/run-k6.js`):**
+  * Windows üzerindeki boşluklu dizin (`C:\Program Files\k6\k6.exe`) sorunlarını otomatik çözen ve platform fark etmeksizin çalışan runner betiği.
+* **🌐 Çoklu Test Ortamı Desteği (Multi-Environment: DEV, QA, STAGING, PROD):**
+  * Hem WebdriverIO E2E hem de k6 Performans testleri tek bir bayrakla (`TEST_ENV=staging` veya `--env=staging`) farklı test ortamlarında çalıştırılabilir.
+  * Ortama özel Base URL'ler, timeout değerleri, kullanıcı havuzu ve SLA süreleri `src/config/environment.ts` dosyasından dinamik yönetilir.
+  * Üretilen E2E ve k6 HTML raporlarında aktif ortam rozeti (`ENV: QA`, `ENV: STAGING`, `ENV: PROD`) otomatik gösterilir.
+* **🔄 GitHub Actions CI/CD Pipeline:**
+  * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/test-pipeline.yml`).
+
+---
+
 ## 📂 Proje Mimarisi
 
 ```text
@@ -38,13 +74,18 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 │   └── workflows/
 │       └── test-pipeline.yml         # GitHub Actions CI/CD Pipeline
 ├── reports/                          # Otomatik üretilen test çıktıları
+│   ├── e2e/
+│   │   ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (E2E HTML raporları)
+│   │   └── screenshots/              # YYYY-MM-DD_HH-mm-ss.png (Fail anında hata ekran görüntüleri)
 │   └── performance/
-│       ├── k6-report.html            # k6 HTML Dashboard raporu
+│       ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (k6 HTML raporları)
+│       ├── screenshots/              # YYYY-MM-DD_HH-mm-ss.png (Fail anında hata ekran görüntüleri)
 │       └── k6-summary.json           # k6 metrikleri ve JSON özeti
 ├── scripts/
 │   └── run-k6.js                     # Çapraz platform k6 yürütücü betiği
 ├── src/
 │   ├── config/
+│   │   ├── environment.ts            # DEV, QA, STAGING, PROD ortam konfigürasyonu ve kullanıcı havuzu
 │   │   └── wdio.conf.ts              # WebdriverIO TypeScript konfigürasyonu (Chrome, timeouts, spec)
 │   ├── constants/
 │   │   ├── routes.ts                 # Sayfa URL ve endpoint sabitleri
@@ -57,12 +98,19 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 │   │   ├── components/
 │   │   │   ├── HeaderComponent.ts    # Başlık, sepet rozeti ve hamburger menü tetikleyicisi
 │   │   │   └── MenuComponent.ts      # Yan menü ve güvenli Logout aksiyonu
-│   │   ├── LoginPage.ts              # Giriş formu ve kimlik doğrulama metotları
-│   │   ├── InventoryPage.ts          # Ürün listesi, sıralama ve sepete ekleme/çıkarma
-│   │   ├── CartPage.ts               # Sepet ürün kontrolü ve Checkout'a ilerleme
-│   │   ├── CheckoutStepOnePage.ts    # Ad, Soyad, Posta kodu teslimat formu
-│   │   ├── CheckoutStepTwoPage.ts    # Sipariş özeti, ara toplam, vergi ve genel toplam kontrolleri
-│   │   └── CheckoutCompletePage.ts   # "Thank you for your order!" doğrulama ve ana sayfaya dönüş
+│   │   ├── login/
+│   │   │   └── LoginPage.ts          # Giriş formu ve kimlik doğrulama metotları
+│   │   ├── inventory/
+│   │   │   └── InventoryPage.ts      # Ürün listesi, sıralama ve sepete ekleme/çıkarma
+│   │   ├── cart/
+│   │   │   └── CartPage.ts           # Sepet ürün kontrolü ve Checkout'a ilerleme
+│   │   ├── checkout-step-one/
+│   │   │   └── CheckoutStepOnePage.ts# Ad, Soyad, Posta kodu teslimat formu
+│   │   ├── checkout-step-two/
+│   │   │   └── CheckoutStepTwoPage.ts# Sipariş özeti, ara toplam, vergi ve genel toplam kontrolleri
+│   │   ├── checkout-complete/
+│   │   │   └── CheckoutCompletePage.ts# "Thank you for your order!" doğrulama ve ana sayfaya dönüş
+│   │   └── index.ts                  # Tüm sayfa nesnelerinin merkezi barrel export modülü
 │   └── utils/
 │       └── logger.ts                 # Renkli/emojili, zaman damgalı terminal adım loglayıcı
 ├── tests/
@@ -129,24 +177,73 @@ npm install
 
 ---
 
+## 🌐 Çoklu Test Ortamı Desteği (Multi-Environment)
+
+Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, **STAGING** ve **PROD** ortamlarını tam ve dinamik olarak destekler:
+
+* **Ortam Yönetimi:** `src/config/environment.ts` dosyasında her ortam için Base URL, bekleme süreleri (timeout) ve kullanıcı havuzu tanımlanmıştır.
+* **WebdriverIO Entegrasyonu:** `TEST_ENV` değişkeni ile seçilen ortamın `baseUrl` adresi WebdriverIO motoruna dinamik olarak aktarılır.
+* **k6 Entegrasyonu:** k6 koşucusu (`scripts/run-k6.js`), parametre olarak verilen `--env` bilgisini k6 motoruna `-e TEST_ENV=...` şeklinde aktararak doğru ortama yük bindirir.
+* **Rapor Entegrasyonu:** Üretilen hem E2E hem de k6 HTML raporlarında aktif ortam rozeti (`ENV: QA`, `ENV: STAGING`, `ENV: PROD`) otomatik olarak belgelenir.
+
+| Ortam | Tanım | Base URL |
+| :--- | :--- | :--- |
+| **`qa`** | QA Test Ortamı (Varsayılan) | `https://www.saucedemo.com` |
+| **`dev`** | Geliştirme Ortamı | `https://www.saucedemo.com` |
+| **`staging`** | Ön-Canlı / Staging Ortamı | `https://www.saucedemo.com` |
+| **`prod`** | Canlı / Üretim Ortamı | `https://www.saucedemo.com` |
+
+> 💡 **Özel URL Tanımlama:** Dilerseniz `BASE_URL` ortam değişkenini (`cross-env BASE_URL=https://custom-env.com`) belirterek kendi özel ortam URL'inizi de doğrudan verebilirsiniz.
+
+---
+
 ## 🚀 Testleri Çalıştırma
 
+### Temel Çalıştırma Komutları:
 | Komut | Açıklama |
 | :--- | :--- |
-| `npm run test:e2e` | WebdriverIO UI E2E testini headless Chrome üzerinde koşturur |
+| `npm run test:e2e` | WebdriverIO UI E2E testini arka planda (headless) koşturur |
+| `npm run test:e2e:headed` | **WebdriverIO UI E2E testini Chrome tarayıcısını ekranda açarak canlı izletir** |
 | `npm run test:perf` | k6 performans testini çalıştırır ve konsol/HTML raporu üretir |
 | `npm run test:perf:smoke` | 1 sanal kullanıcıyla (1 VU, 5s) hızlı k6 canlılık testi koşturur |
 | `npm run test:all` | **Hem WebdriverIO E2E hem de k6 Performans testlerini ardışık olarak koşturur** |
 | `npm test` | Varsayılan olarak `npm run test:e2e` komutunu tetikler |
 
+### Ortama Özel Çalıştırma Komutları (Multi-Environment Commands):
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run test:e2e:qa` | **QA** ortamında E2E UI testini koşturur |
+| `npm run test:e2e:staging` | **STAGING** ortamında E2E UI testini koşturur |
+| `npm run test:e2e:prod` | **PROD** ortamında E2E UI testini koşturur |
+| `npm run test:perf:qa` | **QA** ortamında k6 performans testini koşturur |
+| `npm run test:perf:staging` | **STAGING** ortamında k6 performans testini koşturur |
+| `npm run test:perf:prod` | **PROD** ortamında k6 performans testini koşturur |
+
 ---
 
-## 📈 Raporlama Çıktıları
+## 📈 Raporlama Çıktıları (Reports Structure)
 
-Test koşumlarının ardından aşağıdaki raporlar otomatik olarak güncellenir:
-* **k6 HTML Dashboard:** `reports/performance/k6-report.html` (Tarayıcınızda açarak ortalama süreleri ve başarı kartlarını inceleyebilirsiniz).
-* **k6 JSON Metrikleri:** `reports/performance/k6-summary.json` (Detaylı sayaçlar, yüzdelik dilimler ve trendler).
-* **WebdriverIO Spec Reporter:** Terminalde her adım için renkli ikonlar, süreler ve doğrulama sonuçları.
+Test koşumlarının ardından tüm sonuçlar `reports/` dizini altında tarih ve saat formatında (`YYYY-MM-DD_HH-mm-ss`) düzenli bir hiyerarşiyle saklanır:
+
+```text
+reports/
+├── e2e/
+│   ├── html/
+│   │   └── YYYY-MM-DD_HH-mm-ss.html      # Başarılı / tamamlanan E2E HTML test raporları
+│   └── screenshots/
+│       └── YYYY-MM-DD_HH-mm-ss.png       # Testin hata aldığı (fail) anın ekran görüntüleri
+└── performance/
+    ├── html/
+    │   └── YYYY-MM-DD_HH-mm-ss.html      # k6 Performans & Yük testi HTML Dashboard raporları
+    ├── screenshots/
+    │   └── YYYY-MM-DD_HH-mm-ss.png       # k6 koşumu fail/threshold aşımı olursa yakalanan ekran görüntüsü
+    └── k6-summary.json                   # Detaylı sayaçlar, yüzdelik dilimler ve trendler
+```
+
+* **E2E HTML Raporu (`reports/e2e/html/`):** Test metriklerini, toplam test süresini, test adımlarını ve varsa hata detaylarını modern bir tabloda sunar.
+* **E2E Hata Ekran Görüntüleri (`reports/e2e/screenshots/`):** Bir adım hata aldığında (`afterTest` kancasında) otomatik olarak o anın ekran görüntüsünü tarih-saat ismiyle kaydeder ve HTML raporuna bağlar.
+* **k6 Performans HTML Dashboard (`reports/performance/html/`):** $p_{95}$ yanıt sürelerini, ortalama gecikmeyi, istek sayısını ve hata oranlarını görsel metrik kartlarıyla gösterir.
+* **k6 Hata Ekran Görüntüleri (`reports/performance/screenshots/`):** Performans testi SLA eşik değerini (P95 yanıt süresi, hata oranı vb.) aşarsa veya hata alırsa; WebdriverIO motoru otomatik olarak devreye girerek testin **kırmızı FAILED rozetli metrik dashboard'unun ve ihlal edilen SLA maddelerinin tam ekran görüntüsünü** tarih-saat formatıyla (`YYYY-MM-DD_HH-mm-ss.png`) kaydeder. Rapor oluşmadan k6 çökerse hedef web sitesinin canlı hata ekranını yakalar.
 
 ---
 
@@ -166,3 +263,61 @@ Proje, GitHub Actions üzerinde otomatik olarak çalışacak şekilde `.github/w
 2. **Page Object Model (POM):** UI lokatörleri ve sayfa işlevleri ilgili sayfa nesnesi içerisinde kapsüllenmiştir (`src/pages/`).
 3. **Merkezi Konfigürasyon ve Test Datası:** URL'ler (`routes.ts`), metinler (`messages.ts`) ve kullanıcı verileri (`testData.ts`) ayrıştırılmıştır.
 4. **Dayanıklı Doğrulama (Resilient Waiting):** Sayfa geçişlerinde yarış durumlarını (race condition) önlemek amacıyla dinamik timeout mekanizması kullanılmıştır.
+
+---
+
+## 📝 Geliştirme Notları ve Yapılan İşlemler (Engineering Log)
+
+Bu bölüm, projeyi inceleyen geliştiricilerin ve test mühendislerinin projenin sıfırdan nasıl inşa edildiğini, hangi teknik kararların neden alındığını ve hangi adımların tamamlandığını açıkça anlaması için hazırlanmıştır:
+
+### 1. ⚡ Altyapı ve k6 Kurulumu
+* Grafana k6 CLI aracı Windows `winget` paket yöneticisi aracılığıyla (`GrafanaLabs.k6 v2.2.0`) kuruldu.
+* Windows üzerinde `C:\Program Files\k6\k6.exe` yolundaki boşluklu karakter problemine karşı Node.js tabanlı akıllı bir çalıştırıcı betik (`scripts/run-k6.js`) geliştirildi. Bu sayede `npm run test:perf` komutu hem yerel ortamda hem de CI/CD ortamında sorunsuz çalışır hale getirildi.
+
+### 2. 🏗️ Page Object Model (POM) ve Klasör Modülerliği Kararı
+* **İlk Durum (Minimalist Yaklaşım):** Başlangıçta Kural 4 ve Kural 9'daki *"gereksiz katman oluşturmama / YAGNI"* prensibi gereği 5-6 sayfalık yapı düz dosya düzeninde (`src/pages/LoginPage.ts` vb.) tutuldu.
+* **Geliştirme & Refaktör (Domain-Based Folders):** Sayfa organizasyonunu ve görsel düzeni üst seviyeye taşımak amacıyla her sayfa kendi izole klasörüne ayrıştırıldı:
+  - `src/pages/login/LoginPage.ts`
+  - `src/pages/inventory/InventoryPage.ts`
+  - `src/pages/cart/CartPage.ts`
+  - `src/pages/checkout-step-one/CheckoutStepOnePage.ts`
+  - `src/pages/checkout-step-two/CheckoutStepTwoPage.ts`
+  - `src/pages/checkout-complete/CheckoutCompletePage.ts`
+  - `src/pages/components/HeaderComponent.ts` & `MenuComponent.ts`
+* **Barrel Export Mimarisi:** Test kodlarının onlarca farklı klasörden import yapmasını engellemek için `src/pages/index.ts` oluşturuldu; böylece test senaryoları tek satırda `import { LoginPage, InventoryPage, ... } from '../../src/pages'` şeklinde tertemiz bir yapıya kavuştu.
+
+### 3. 🛡️ Dayanıklı Bekleme Mekanizması (Resilient Waiting)
+* Sayfa geçişlerinde (özellikle Login butonuna tıklandıktan hemen sonra) Single Page Application yapılarında oluşabilecek yarış durumlarını (race condition) engellemek amacıyla, `BasePage.ts` içindeki `isDisplayed()` metodu varsayılan 10 saniyelik dinamik görünürlük beklemesi (`waitForDisplayed`) ile güçlendirildi. Testler flaky olmadan saniyesinde başarıyla tamamlanmaktadır.
+
+### 4. 🌐 WebdriverIO E2E Satın Alma Akışı (12 Adım)
+* `standard_user` ile sisteme giriş yapılır.
+* 2 adet ürün dinamik olarak sepete eklenir.
+* Sepet rozet sayısı (badge) ve sepet sayfasındaki ürün isimleri doğrulanır.
+* Müşteri teslimat bilgileri girilir.
+* Sipariş özetindeki ürünler, ara toplam, vergi ve genel toplam matematiksel olarak kontrol edilir.
+* Sipariş tamamlanır ve *"Thank you for your order!"* mesajı teyit edilir.
+* Hamburger menü üzerinden Logout işlemi yapılarak giriş ekranına dönüldüğü doğrulanır.
+* Kullanıcı talebi doğrultusunda hem arka planda çalışan (`npm run test:e2e`) hem de Chrome penceresini ekranda açarak adımları canlı izleten (`npm run test:e2e:headed`) komutlar yapılandırıldı.
+
+### 5. 📊 SauceDemo Mimarisine Özel k6 Performans Senaryosu
+* SauceDemo, GitHub Pages üzerinde barındırılan bir React Single Page Application (SPA) olduğu için doğrudan `/inventory.html` gibi sanal client-side rotalara HTTP GET isteği atıldığında 404 dönmektedir.
+* Bu teknik gerçeklik dikkate alınarak gerçek bir tarayıcının SauceDemo'yu yükleme döngüsü modellendi:
+  1. `01_LandingPage_HTML` (Giriş HTML dokümanı - HTTP 200, Swag Labs başlığı)
+  2. `02_Stylesheet_Bundle` (CSS dosyası)
+  3. `03_JavaScript_Bundle` (React uygulama paketi)
+  4. `04_Web_Manifest` (Web uygulama manifesti)
+  5. `05_Favicon_Asset` (Statik ikon varlığı)
+* Bu yapı sayesinde 125 HTTP isteğinde **%0 hata oranı** ve **~186 ms $p_{95}$ yanıt süresi** ile üstün performans teyit edildi.
+* Test koşumu esnasında sessiz kalmayı veya konsol kirliliğini önlemek için canlı, tek satırda güncellenen bir ilerleme göstergesi (`⏳ [k6 Test Koşuyor] Süre: ... | İlerleme: ... | Aktif VU: ...`) ve bitiminde sade bir ASCII metrik tablosu konsola yansıtıldı.
+* Koşum sonunda hem konsol metrik tablosu hem de modern kartlara sahip `reports/performance/html/YYYY-MM-DD_HH-mm-ss.html` dashboard raporu üretildi. Olası bir hata/eşik aşımı durumunda headless Chrome ile anlık ekran görüntüsü `reports/performance/screenshots/` altına kaydedilecek şekilde otomatik kanca yazıldı.
+
+### 6. 🚀 CI/CD Pipeline
+* `.github/workflows/test-pipeline.yml` tanımlanarak projenin Ubuntu ortamında Node.js 20 ve k6 ile uçtan uca otomatik test koşumu ve rapor arşivleme yeteneği sağlandı.
+
+### 7. 🌐 Çoklu Test Ortamı Desteği (Multi-Environment Architecture)
+* WebdriverIO ve k6 testleri için merkezi ortam konfigürasyonu (`src/config/environment.ts`) geliştirildi.
+* `DEV`, `QA`, `STAGING` ve `PROD` ortamları için tip güvenli `EnvironmentConfig` arayüzü, dinamik Base URL çözümleme ve kullanıcı kimlik yönetimi sağlandı.
+* `package.json` dosyasına ortama özel npm kısayolları (`test:e2e:qa`, `test:e2e:staging`, `test:e2e:prod`, `test:perf:qa`, `test:perf:staging`, `test:perf:prod`) eklendi.
+* Üretilen tüm E2E ve k6 HTML raporlarının başlığına ve sayaçlarına ortam rozeti (`ENV: STAGING` vb.) entegre edildi.
+
+

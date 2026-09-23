@@ -1,8 +1,19 @@
 /**
- * Shared k6 Configuration & Thresholds
+ * Shared k6 Configuration & Multi-Environment Support
  */
+const ENVIRONMENTS = {
+  dev: 'https://www.saucedemo.com',
+  qa: 'https://www.saucedemo.com',
+  staging: 'https://www.saucedemo.com',
+  prod: 'https://www.saucedemo.com',
+};
+
+const activeEnv = (__ENV.TEST_ENV || 'qa').toLowerCase().trim();
+const resolvedBaseUrl = __ENV.BASE_URL || ENVIRONMENTS[activeEnv] || ENVIRONMENTS.qa;
+
 export const K6_CONFIG = {
-  baseUrl: 'https://www.saucedemo.com',
+  environment: activeEnv,
+  baseUrl: resolvedBaseUrl,
   stages: [
     { duration: '5s', target: 5 },   // Ramp-up to 5 Virtual Users
     { duration: '10s', target: 5 },  // Steady state load

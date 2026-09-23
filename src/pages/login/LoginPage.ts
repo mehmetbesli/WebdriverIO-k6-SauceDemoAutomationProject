@@ -1,6 +1,6 @@
 import { $ } from '@wdio/globals';
-import { BasePage } from './base/BasePage';
-import { ROUTES } from '../constants/routes';
+import { BasePage } from '../base/BasePage';
+import { ROUTES } from '../../constants/routes';
 
 /**
  * Page Object representing SauceDemo Login Page

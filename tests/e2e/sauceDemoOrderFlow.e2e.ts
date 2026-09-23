@@ -1,10 +1,12 @@
 import { expect } from '@wdio/globals';
-import { LoginPage } from '../../src/pages/LoginPage';
-import { InventoryPage } from '../../src/pages/InventoryPage';
-import { CartPage } from '../../src/pages/CartPage';
-import { CheckoutStepOnePage } from '../../src/pages/CheckoutStepOnePage';
-import { CheckoutStepTwoPage } from '../../src/pages/CheckoutStepTwoPage';
-import { CheckoutCompletePage } from '../../src/pages/CheckoutCompletePage';
+import {
+  LoginPage,
+  InventoryPage,
+  CartPage,
+  CheckoutStepOnePage,
+  CheckoutStepTwoPage,
+  CheckoutCompletePage,
+} from '../../src/pages';
 import { TEST_DATA } from '../../src/data/testData';
 import { MESSAGES } from '../../src/constants/messages';
 import { Logger } from '../../src/utils/logger';
