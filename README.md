@@ -51,8 +51,12 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
   * CI/CD entegrasyonu ve metrik analizleri için `reports/performance/k6-summary.json` metrik dosyası oluşturulur.
 * **🛡️ Flaky-Free Dayanıklı Bekleme Mekanizması (Resilient Waiting):**
   * SPA sayfa geçişlerinde yarış durumlarını (race condition) ve kararsız testleri önlemek amacıyla `BasePage` sınıfında dinamik 10 saniyelik görünürlük beklemesi (`waitForDisplayed`) entegre edilmiştir.
-* **📝 Zaman Damgalı ve Renkli Adım Loglayıcı (`Logger`):**
-  * Testin hangi adımda olduğunu konsolda mavi/yeşil/kırmızı renkler, zaman damgaları ve emojilerle net gösteren adım logger'ı (`src/utils/logger.ts`).
+* **📝 Kurumsal Çift Akışlı Loglama Mekanizması (Multi-Stream Logger):**
+  * Hem terminale renkli ve emojili çıktı basan, hem de eşzamanlı olarak `reports/e2e/logs/YYYY-MM-DD_HH-mm-ss.log` ve `reports/e2e/logs/e2e-execution.log` kalıcı dosyalarına temiz (ANSI-free) formatta yazan gelişmiş logger (`src/utils/logger.ts`).
+  * `DEBUG`, `INFO`, `STEP`, `WARN`, `ERROR` seviye desteği ve `LOG_LEVEL` filtreleme özelliği.
+  * WDIO yaşam döngüsü hook'ları (`beforeSuite`, `beforeTest`, `afterTest`, `afterSuite`) ile tam entegre; fail anında hata stack trace'i ve ekran görüntüsü referanslarını otomatik loglar.
+  * E2E HTML raporu başlığında tek tıkla doğrudan açılabilen **"📄 Execution Log"** bağlantısı.
+  * Performans koşuları için de k6 runner üzerinden `reports/performance/logs/` altında oturum ve kümülatif loglama.
 * **🏷️ Merkezi Sabitler ve Test Verisi İzolasyonu:**
   * URL rotaları (`src/constants/routes.ts`), UI başlık ve metinleri (`src/constants/messages.ts`), kullanıcı ve sipariş verileri (`src/data/testData.ts`) test kodlarından tamamen ayrıştırılmıştır.
 * **🛠️ Akıllı k6 Koşucu Betiği (`scripts/run-k6.js`):**
@@ -80,9 +84,11 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 ├── reports/                          # Otomatik üretilen test çıktıları
 │   ├── e2e/
 │   │   ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (E2E HTML raporları)
+│   │   ├── logs/                     # YYYY-MM-DD_HH-mm-ss.log ve e2e-execution.log (E2E log dosyaları)
 │   │   └── screenshots/              # YYYY-MM-DD_HH-mm-ss.png (Fail anında hata ekran görüntüleri)
 │   └── performance/
 │       ├── html/                     # YYYY-MM-DD_HH-mm-ss.html (k6 HTML raporları)
+│       ├── logs/                     # YYYY-MM-DD_HH-mm-ss.log ve perf-execution.log (k6 log dosyaları)
 │       ├── screenshots/              # YYYY-MM-DD_HH-mm-ss.png (Fail anında hata ekran görüntüleri)
 │       └── k6-summary.json           # k6 metrikleri ve JSON özeti
 ├── scripts/
