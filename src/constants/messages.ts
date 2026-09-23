@@ -10,6 +10,12 @@ export const MESSAGES = {
     CHECKOUT_OVERVIEW: 'Checkout: Overview',
     CHECKOUT_COMPLETE: 'Checkout: Complete!',
   },
+  ERRORS: {
+    LOCKED_OUT: 'Epic sadface: Sorry, this user has been locked out.',
+    INVALID_CREDENTIALS: 'Epic sadface: Username and password do not match any user in this service',
+    USERNAME_REQUIRED: 'Epic sadface: Username is required',
+    PASSWORD_REQUIRED: 'Epic sadface: Password is required',
+  },
   ORDER_SUCCESS: {
     HEADER: 'Thank you for your order!',
     DESCRIPTION: 'Your order has been dispatched, and will arrive just as fast as the pony can get there!',

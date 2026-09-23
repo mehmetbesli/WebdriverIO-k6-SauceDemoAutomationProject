@@ -80,4 +80,8 @@ export class InventoryPage extends BasePage {
   async isInventoryPageDisplayed(): Promise<boolean> {
     return this.isDisplayed(this.inventoryList);
   }
+
+  async isInventoryDisplayed(): Promise<boolean> {
+    return this.isInventoryPageDisplayed();
+  }
 }

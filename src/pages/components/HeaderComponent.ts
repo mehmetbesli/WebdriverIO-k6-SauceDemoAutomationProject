@@ -34,8 +34,16 @@ export class HeaderComponent {
     await this.cartLink.click();
   }
 
+  async openCart(): Promise<void> {
+    await this.clickCart();
+  }
+
+  async hasCartBadge(): Promise<boolean> {
+    return this.cartBadge.isDisplayed().catch(() => false);
+  }
+
   async getCartBadgeCount(): Promise<number> {
-    const isBadgePresent = await this.cartBadge.isDisplayed().catch(() => false);
+    const isBadgePresent = await this.hasCartBadge();
     if (!isBadgePresent) {
       return 0;
     }

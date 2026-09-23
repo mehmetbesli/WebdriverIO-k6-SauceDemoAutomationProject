@@ -11,6 +11,7 @@ const envName = getEnvironmentName();
 const isHeadless = process.env.HEADLESS !== 'false';
 const defaultRetries = process.env.RETRIES !== undefined ? parseInt(process.env.RETRIES, 10) : 2;
 const specRetries = process.env.SPEC_RETRIES !== undefined ? parseInt(process.env.SPEC_RETRIES, 10) : 2;
+const maxInstances = process.env.MAX_INSTANCES !== undefined ? parseInt(process.env.MAX_INSTANCES, 10) : 3;
 const suiteResults: TestResultItem[] = [];
 
 export const config: WebdriverIO.Config = {
@@ -22,9 +23,10 @@ export const config: WebdriverIO.Config = {
     path.resolve(__dirname, '../../tests/e2e/**/*.e2e.ts'),
   ],
   exclude: [],
-  maxInstances: 1,
+  maxInstances: maxInstances,
   capabilities: [{
     browserName: 'chrome',
+    maxInstances: maxInstances,
     'goog:chromeOptions': {
       args: [
         ...(isHeadless ? ['--headless=new'] : []),
@@ -51,9 +53,16 @@ export const config: WebdriverIO.Config = {
 
   onPrepare: function () {
     const sessionTimestamp = Logger.getSessionTimestamp();
-    console.log(`\n\x1b[36m[E2E Runner] Target Environment: ${envName.toUpperCase()} | Base URL: ${activeEnv.baseUrl} | Retries: ${defaultRetries}\x1b[0m\n`);
-    Logger.info(`[E2E Runner Initialized] Environment: ${envName.toUpperCase()} | Base URL: ${activeEnv.baseUrl} | Max Retries: ${defaultRetries}`);
+    console.log(`\n\x1b[36m[E2E Runner] Target Environment: ${envName.toUpperCase()} | Base URL: ${activeEnv.baseUrl} | Parallel Instances: ${maxInstances} | Retries: ${defaultRetries}\x1b[0m\n`);
+    Logger.info(`[E2E Runner Initialized] Environment: ${envName.toUpperCase()} | Base URL: ${activeEnv.baseUrl} | Max Instances: ${maxInstances} | Max Retries: ${defaultRetries}`);
     Logger.info(`[Execution Log Session] ${Logger.getLogFilePath()}`);
+
+    // Clean up temporary results store from previous runs
+    const tempDir = path.resolve(process.cwd(), 'reports/e2e/.results');
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    }
+    fs.mkdirSync(tempDir, { recursive: true });
   },
 
   beforeSuite: function (suite) {
@@ -122,27 +131,67 @@ export const config: WebdriverIO.Config = {
     } else {
       suiteResults.push(resultItem);
     }
+
+    // Persist result item to temp directory for parallel execution aggregation
+    try {
+      const tempDir = path.resolve(process.cwd(), 'reports/e2e/.results');
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+      const safeTitle = test.title.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 30);
+      const tempFile = path.resolve(tempDir, `${safeTitle}_${Date.now()}.json`);
+      fs.writeFileSync(tempFile, JSON.stringify(resultItem), 'utf-8');
+    } catch (_) {}
   },
 
   /**
    * Hook executed after all tests in a suite complete
-   * Writes HTML report into reports/e2e/html/YYYY-MM-DD_HH-mm-ss.html
    */
   afterSuite: async function (suite) {
-    if (suiteResults.length === 0) return;
+    Logger.info(`[Suite Finished] "${suite.title || 'E2E Suite'}" | Worker Suite Results: ${suiteResults.length}`);
+  },
 
-    const htmlDir = path.resolve(process.cwd(), 'reports/e2e/html');
-    if (!fs.existsSync(htmlDir)) {
-      fs.mkdirSync(htmlDir, { recursive: true });
+  /**
+   * Hook executed once all workers have finished running all specs
+   * Aggregates results from all parallel workers into a single unified HTML dashboard
+   */
+  onComplete: function () {
+    const tempDir = path.resolve(process.cwd(), 'reports/e2e/.results');
+    const allResults: TestResultItem[] = [];
+
+    if (fs.existsSync(tempDir)) {
+      const files = fs.readdirSync(tempDir).filter((f) => f.endsWith('.json'));
+      for (const file of files) {
+        try {
+          const content = fs.readFileSync(path.resolve(tempDir, file), 'utf-8');
+          const parsed: TestResultItem = JSON.parse(content);
+          const existingIdx = allResults.findIndex(
+            (r) => r.title === parsed.title && r.parent === parsed.parent
+          );
+          if (existingIdx >= 0) {
+            allResults[existingIdx] = parsed;
+          } else {
+            allResults.push(parsed);
+          }
+        } catch (_) {}
+      }
+      fs.rmSync(tempDir, { recursive: true, force: true });
     }
 
-    const timestamp = Logger.getSessionTimestamp();
-    const reportFile = path.resolve(htmlDir, `${timestamp}.html`);
-    const htmlContent = generateE2EHtmlReport(suite.title || 'E2E Test Suite', timestamp, suiteResults, envName);
-    fs.writeFileSync(reportFile, htmlContent, 'utf-8');
-    Logger.info(`[E2E Suite Completed] "${suite.title || 'E2E Suite'}" | Total Results: ${suiteResults.length}`);
-    Logger.info(`[HTML Report Generated] ${reportFile}`);
-    Logger.info(`[Execution Log File] ${Logger.getLogFilePath()}`);
-    console.log(`\n\x1b[32m[E2E Reporter] HTML Report generated: ${reportFile}\x1b[0m\n`);
+    if (allResults.length > 0) {
+      const htmlDir = path.resolve(process.cwd(), 'reports/e2e/html');
+      if (!fs.existsSync(htmlDir)) {
+        fs.mkdirSync(htmlDir, { recursive: true });
+      }
+
+      const timestamp = Logger.getSessionTimestamp();
+      const reportFile = path.resolve(htmlDir, `${timestamp}.html`);
+      const htmlContent = generateE2EHtmlReport('SauceDemo E2E Test Suite (Parallel)', timestamp, allResults, envName);
+      fs.writeFileSync(reportFile, htmlContent, 'utf-8');
+      Logger.info(`[All Parallel Workers Finished] Total Tests: ${allResults.length}`);
+      Logger.info(`[Unified HTML Report Generated] ${reportFile}`);
+      Logger.info(`[Execution Log File] ${Logger.getLogFilePath()}`);
+      console.log(`\n\x1b[32m[E2E Reporter] Unified Parallel HTML Report generated: ${reportFile}\x1b[0m\n`);
+    }
   },
 };

@@ -98,52 +98,69 @@ export class Logger {
     }
   }
 
+  private static getWorkerTag(): { consoleTag: string; fileTag: string } {
+    const workerId = process.env.WDIO_WORKER_ID;
+    if (workerId) {
+      return {
+        consoleTag: `\x1b[35m[${workerId}]\x1b[0m `,
+        fileTag: `[${workerId}] `,
+      };
+    }
+    return { consoleTag: '', fileTag: '' };
+  }
+
   static debug(message: string, context?: unknown): void {
     if (Logger.currentLevel > LogLevel.DEBUG) return;
     const ts = Logger.getTimestamp();
+    const tag = Logger.getWorkerTag();
     const contextStr = context ? ` ${typeof context === 'object' ? JSON.stringify(context) : context}` : '';
-    console.log(`\x1b[90m[${ts}] 🔍 DEBUG:\x1b[0m ${message}${contextStr}`);
-    Logger.writeToFile(`[${ts}] [DEBUG]   ${message}${contextStr}`);
+    console.log(`${tag.consoleTag}\x1b[90m[${ts}] 🔍 DEBUG:\x1b[0m ${message}${contextStr}`);
+    Logger.writeToFile(`[${ts}] ${tag.fileTag}[DEBUG]   ${message}${contextStr}`);
   }
 
   static info(message: string): void {
     if (Logger.currentLevel > LogLevel.INFO) return;
     const ts = Logger.getTimestamp();
-    console.log(`\x1b[34m[${ts}] ℹ️  INFO:\x1b[0m ${message}`);
-    Logger.writeToFile(`[${ts}] [INFO]    ${message}`);
+    const tag = Logger.getWorkerTag();
+    console.log(`${tag.consoleTag}\x1b[34m[${ts}] ℹ️  INFO:\x1b[0m ${message}`);
+    Logger.writeToFile(`[${ts}] ${tag.fileTag}[INFO]    ${message}`);
   }
 
   static step(stepNumber: number, message: string): void {
     if (Logger.currentLevel > LogLevel.STEP) return;
     const ts = Logger.getTimestamp();
-    console.log(`\x1b[36m[${ts}] 🔹 STEP ${stepNumber}:\x1b[0m ${message}`);
-    Logger.writeToFile(`[${ts}] [STEP ${stepNumber}] ${message}`);
+    const tag = Logger.getWorkerTag();
+    console.log(`${tag.consoleTag}\x1b[36m[${ts}] 🔹 STEP ${stepNumber}:\x1b[0m ${message}`);
+    Logger.writeToFile(`[${ts}] ${tag.fileTag}[STEP ${stepNumber}] ${message}`);
   }
 
   static success(message: string): void {
     if (Logger.currentLevel > LogLevel.SUCCESS) return;
     const ts = Logger.getTimestamp();
-    console.log(`\x1b[32m[${ts}] ✅ SUCCESS:\x1b[0m ${message}`);
-    Logger.writeToFile(`[${ts}] [SUCCESS] ${message}`);
+    const tag = Logger.getWorkerTag();
+    console.log(`${tag.consoleTag}\x1b[32m[${ts}] ✅ SUCCESS:\x1b[0m ${message}`);
+    Logger.writeToFile(`[${ts}] ${tag.fileTag}[SUCCESS] ${message}`);
   }
 
   static warn(message: string): void {
     if (Logger.currentLevel > LogLevel.WARN) return;
     const ts = Logger.getTimestamp();
-    console.warn(`\x1b[33m[${ts}] ⚠️  WARN:\x1b[0m ${message}`);
-    Logger.writeToFile(`[${ts}] [WARN]    ${message}`);
+    const tag = Logger.getWorkerTag();
+    console.warn(`${tag.consoleTag}\x1b[33m[${ts}] ⚠️  WARN:\x1b[0m ${message}`);
+    Logger.writeToFile(`[${ts}] ${tag.fileTag}[WARN]    ${message}`);
   }
 
   static error(message: string, error?: unknown): void {
     if (Logger.currentLevel > LogLevel.ERROR) return;
     const ts = Logger.getTimestamp();
+    const tag = Logger.getWorkerTag();
     let errorDetails = '';
     if (error instanceof Error) {
       errorDetails = `\nStack: ${error.stack}`;
     } else if (error) {
       errorDetails = ` ${typeof error === 'object' ? JSON.stringify(error) : error}`;
     }
-    console.error(`\x1b[31m[${ts}] ❌ ERROR:\x1b[0m ${message}`, error ?? '');
-    Logger.writeToFile(`[${ts}] [ERROR]   ${message}${errorDetails}`);
+    console.error(`${tag.consoleTag}\x1b[31m[${ts}] ❌ ERROR:\x1b[0m ${message}`, error ?? '');
+    Logger.writeToFile(`[${ts}] ${tag.fileTag}[ERROR]   ${message}${errorDetails}`);
   }
 }
