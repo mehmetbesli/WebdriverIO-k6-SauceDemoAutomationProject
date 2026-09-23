@@ -69,6 +69,10 @@ Projede geliştirilen ve kullanıma sunulan temel özellikler:
   * Ağ gecikmeleri veya anlık DOM dalgalanmalarından kaynaklı flaky testleri engellemek için test seviyesinde (`mochaOpts.retries: 2`) ve dosya seviyesinde (`specFileRetries: 2`) iki katmanlı retry motoru.
   * Test ara adımda fail olursa konsola `⚠️ [Retry Engine] ... Retrying...` basılır; hata ekran görüntüsü yalnızca son deneme de başarısız olursa yakalanır.
   * Flaky geçen testler HTML raporunda şeffaf bir şekilde `PASSED (FLAKY) - Resolved after retry` olarak gösterilir.
+* **⚡ Eşzamanlı Paralel Test Koşumu (Parallel Execution - Varsayılan: 3 Worker):**
+  * Bağımsız spec dosyalarını aynı anda farklı tarayıcı worker süreçlerinde koşturarak test paketinin toplam çalışma süresini dramatik biçimde kısaltır.
+  * `maxInstances` ortam değişkeni (`MAX_INSTANCES=3`) veya doğrudan paralel çalıştırma scriptleri (`npm run test:e2e:parallel:staging`).
+  * Çoklu iş parçacığı tarafından üretilen test sonuçlarını tek bir raporda toplayan **Birleşik Paralel HTML Raporu** ve worker etiketli ortak loglama (`[0-0]`, `[0-1]`, `[0-2]`).
 * **🔄 GitHub Actions CI/CD Pipeline:**
   * Kod push veya pull request yapıldığında hem E2E hem performans testlerini Ubuntu ortamında koşturan ve raporları saklayan pipeline (`.github/workflows/test-pipeline.yml`).
 
@@ -125,7 +129,9 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 │       └── logger.ts                 # Renkli/emojili, zaman damgalı terminal adım loglayıcı
 ├── tests/
 │   ├── e2e/
-│   │   └── sauceDemoOrderFlow.e2e.ts # WebdriverIO TypeScript E2E Satın Alma Senaryosu
+│   │   ├── sauceDemoOrderFlow.e2e.ts # WebdriverIO E2E Satın Alma Senaryosu (TC01)
+│   │   ├── sauceDemoLogin.e2e.ts     # Kimlik Doğrulama & Negatif Login Senaryoları (TC02, TC03, TC04)
+│   │   └── sauceDemoCart.e2e.ts      # Dinamik Sepet Rozeti & Ürün Çıkarma Senaryosu (TC05)
 │   └── performance/
 │       ├── config/
 │       │   └── k6.config.js          # k6 eşik değerleri (thresholds), aşamalar (stages) ve başlıklar
@@ -140,19 +146,17 @@ WebdriverIO-k6-SauceDemoAutomationProject/
 
 ## 🧪 Test Senaryoları
 
-### 1. 🌐 WebdriverIO E2E Senaryosu (`sauceDemoOrderFlow.e2e.ts`)
-* **Adım 1:** SauceDemo giriş sayfasına erişim ve formun hazır olduğunu doğrulama.
-* **Adım 2:** `standard_user` kimlik bilgileriyle başarılı oturum açma.
-* **Adım 3:** Ürünler sayfasına (`/inventory.html`) yönlenildiğini ve `"Products"` başlığını doğrulama.
-* **Adım 4:** Seçilen ürünleri (`Sauce Labs Backpack`, `Sauce Labs Bike Light`) sepete ekleme.
-* **Adım 5:** Sepet ikonundaki rozet sayısının `2` olduğunu doğrulama.
-* **Adım 6:** Sepet sayfasına gidip eklenen tüm ürün isimlerini doğrulama.
-* **Adım 7:** Checkout adımına ilerleme ve `"Checkout: Your Information"` ekranını doğrulama.
-* **Adım 8:** Müşteri teslimat bilgilerini (Ad, Soyad, Posta Kodu) doldurarak devam etme.
-* **Adım 9:** Sipariş özeti ekranında ürün listesini, ara toplamı, vergi tutarını ve genel toplamı doğrulama.
-* **Adım 10:** Siparişi tamamlama ve `"Thank you for your order!"` teyit mesajını alma.
-* **Adım 11:** Hamburger menüyü açarak Logout bağlantısına tıklama.
-* **Adım 12:** Giriş sayfasına güvenli bir şekilde dönüldüğünü doğrulama.
+### 1. 🌐 WebdriverIO E2E Senaryoları (Paralel Çalıştırılabilir)
+* **`sauceDemoOrderFlow.e2e.ts` (TC01 - Full Purchase Flow):**
+  * Giriş -> Ürünleri Sepete Ekleme -> Sepet Kontrolü -> Checkout Bilgileri -> Finansal Toplamların Doğrulanması -> Sipariş Tamamlama -> Çıkış (Logout).
+* **`sauceDemoLogin.e2e.ts` (TC02, TC03, TC04 - Authentication & Validations):**
+  * **TC02:** Kilitli kullanıcı (`locked_out_user`) ile giriş denemesi ve `"Sorry, this user has been locked out"` hata mesajı doğrulaması.
+  * **TC03:** Hatalı şifre ile giriş denemesi ve `"Username and password do not match"` uyarısı kontrolü.
+  * **TC04:** Geçerli `standard_user` ile başarılı giriş ve Envanter sayfasına yönlenme kontrolü.
+* **`sauceDemoCart.e2e.ts` (TC05 - Cart Badge & Item Management):**
+  * Sepete sırayla ürün ekleme ve sepet rozetinin dinamik artışı (`1`, `2`).
+  * Envanter sayfasından ürün çıkarma ve rozetin anlık azalması (`1`).
+  * Sepet sayfasından son ürünü silme ve rozetin DOM'dan tamamen kalktığının doğrulanması.
 
 ### 2. ⚡ k6 Performans Senaryosu (`sauceDemoLoad.test.js`)
 * **01_LandingPage_HTML:** Giriş sayfası ana dokümanının HTTP 200 yanıtı ve `p95 < 1000ms` sürede döndüğünün kontrolü.
@@ -237,7 +241,17 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:e2e:headed:staging` | **STAGING** ortamında Chrome tarayıcısını ekranda açarak canlı izletir |
 | `npm run test:e2e:headed:prod` | **PROD** ortamında Chrome tarayıcısını ekranda açarak canlı izletir |
 
-#### 3. k6 Performans & Yük Testi Koşumu:
+#### 3. Eşzamanlı Paralel Koşum (Parallel Execution):
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run test:e2e:parallel` | Tüm spec dosyalarını aynı anda (3 paralel worker ile) koşturur |
+| `npm run test:e2e:parallel:qa` | **QA** ortamında tüm spec'leri paralel worker'larla koşturur |
+| `npm run test:e2e:parallel:dev` | **DEV** ortamında tüm spec'leri paralel worker'larla koşturur |
+| `npm run test:e2e:parallel:staging` | **STAGING** ortamında tüm spec'leri paralel worker'larla koşturur |
+| `npm run test:e2e:parallel:prod` | **PROD** ortamında tüm spec'leri paralel worker'larla koşturur |
+| `npm run test:e2e:parallel:headed` | Testleri ekranda 3 ayrı Chrome penceresi açarak canlı ve paralel koşturur |
+
+#### 4. k6 Performans & Yük Testi Koşumu:
 | Komut | Açıklama |
 | :--- | :--- |
 | `npm run test:perf:qa` | **QA** ortamında k6 performans testini koşturur |
@@ -245,7 +259,7 @@ Proje; modern kurumsal test otomasyonlarında ihtiyaç duyulan **DEV**, **QA**, 
 | `npm run test:perf:staging` | **STAGING** ortamında k6 performans testini koşturur |
 | `npm run test:perf:prod` | **PROD** ortamında k6 performans testini koşturur |
 
-#### 4. Yeniden Deneme (Retry) Parametrelerini Özelleştirme:
+#### 5. Yeniden Deneme (Retry) Parametrelerini Özelleştirme:
 Varsayılan olarak WebdriverIO testleri olası flaky hataları önlemek için **2 kez** tekrar denenir (`RETRIES=2`). Dilerseniz terminal üzerinden bu değeri dinamik değiştirebilirsiniz:
 
 ```bash
