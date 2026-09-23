@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { remote } = require('webdriverio');
+const { generatePerfExcelReport } = require('./utils/perfExcelReporter');
 
 function getFormattedTimestamp(date = new Date()) {
   const pad = (n) => n.toString().padStart(2, '0');
@@ -277,7 +278,29 @@ proc.on('close', async (code) => {
   } else {
     appendLog(`[${getLocalTimeString()}] [k6 Runner] Performance test completed successfully. Exit code: 0`);
     appendLog(`[${getLocalTimeString()}] [k6 Runner] Report generated: reports/performance/html/${timestamp}.html`);
-    console.log(`\n\x1b[32m[k6 Runner] Performance HTML Report generated: reports/performance/html/${timestamp}.html\x1b[0m\n`);
+    console.log(`\n\x1b[32m[k6 Runner] Performance HTML Report generated: reports/performance/html/${timestamp}.html\x1b[0m`);
+  }
+
+  // Generate Performance Excel Report (.xlsx)
+  const summaryJsonPath = path.resolve(__dirname, '../reports/performance/k6-summary.json');
+  const excelDir = path.resolve(__dirname, '../reports/excel');
+  const excelFile = path.resolve(excelDir, `${timestamp}_PERF_${testEnv.toUpperCase()}.xlsx`);
+
+  if (fs.existsSync(summaryJsonPath)) {
+    try {
+      const summaryData = JSON.parse(fs.readFileSync(summaryJsonPath, 'utf-8'));
+      await generatePerfExcelReport({
+        summaryData,
+        environment: testEnv,
+        targetUrl: 'https://www.saucedemo.com',
+        timestamp,
+        outputPath: excelFile,
+      });
+      appendLog(`[${getLocalTimeString()}] [k6 Runner] Performance Excel Report generated: reports/excel/${timestamp}_PERF_${testEnv.toUpperCase()}.xlsx`);
+      console.log(`\x1b[32m[k6 Runner] Performance Excel Report generated: ${excelFile}\x1b[0m\n`);
+    } catch (excelErr) {
+      appendLog(`[${getLocalTimeString()}] [k6 Runner] Failed to generate Performance Excel report: ${excelErr.message}`);
+    }
   }
 
   setTimeout(() => {
