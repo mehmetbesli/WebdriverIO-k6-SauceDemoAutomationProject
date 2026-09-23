@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update \
-    && apt-get install -y --no-install-recommends google-chrome-stable \
+    && apt-get install -y --no-install-recommends google-chrome-stable firefox-esr \
     && curl -s -L "https://github.com/grafana/k6/releases/download/v0.56.0/k6-v0.56.0-linux-amd64.tar.gz" | tar -xz -C /tmp \
     && mv /tmp/k6-v0.56.0-linux-amd64/k6 /usr/local/bin/k6 \
     && rm -rf /tmp/k6-v0.56.0-linux-amd64 \
@@ -58,6 +58,7 @@ ENV CI=true \
     HEADLESS=true \
     AUTO_OPEN=false \
     CHROME_BIN=/usr/bin/google-chrome \
+    FIREFOX_BIN=/usr/bin/firefox-esr \
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 
 WORKDIR /app

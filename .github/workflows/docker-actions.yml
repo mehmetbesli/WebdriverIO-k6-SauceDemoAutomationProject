@@ -57,6 +57,7 @@ jobs:
     env:
       TEST_ENV: ${{ github.event.inputs.environment || 'qa' }}
       TEST_TYPE: ${{ github.event.inputs.test_type || 'all' }}
+      BROWSER: ${{ github.event.inputs.browser || 'chrome' }}
 
     steps:
       - name: 📥 Checkout Repository
@@ -80,7 +81,7 @@ jobs:
         run: |
           mkdir -p reports
           chmod -R 777 reports
-          echo "Running $TEST_TYPE tests on environment: $TEST_ENV inside container..."
+          echo "Running $TEST_TYPE tests on environment: $TEST_ENV | Browser: $BROWSER inside container..."
           
           if [ "$TEST_TYPE" = "e2e" ]; then
             docker run --rm \
@@ -88,6 +89,7 @@ jobs:
               -e HEADLESS=true \
               -e AUTO_OPEN=false \
               -e TEST_ENV=$TEST_ENV \
+              -e BROWSER=$BROWSER \
               -v $(pwd)/reports:/app/reports \
               saucedemo-test-automation:latest npm run test:e2e
           elif [ "$TEST_TYPE" = "performance" ]; then
@@ -102,6 +104,7 @@ jobs:
               -e HEADLESS=true \
               -e AUTO_OPEN=false \
               -e TEST_ENV=$TEST_ENV \
+              -e BROWSER=$BROWSER \
               -v $(pwd)/reports:/app/reports \
               saucedemo-test-automation:latest npm run test:all
           fi
@@ -115,8 +118,9 @@ jobs:
           echo "| Parameter | Value |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| **Environment** | \`${{ env.TEST_ENV }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Browser** | \`${{ env.BROWSER }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Test Suite** | \`${{ env.TEST_TYPE }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Container Environment** | Debian Bookworm (Chrome + OpenJDK 17 + k6) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Container Environment** | Debian Bookworm (Chrome + Firefox + Java 17 + k6) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Triggered By** | \`${{ github.actor }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| **Status** | $( [ "${{ steps.container_test.outcome }}" = "success" ] && echo "🟢 **PASSED**" || echo "🔴 **FAILED**" ) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
