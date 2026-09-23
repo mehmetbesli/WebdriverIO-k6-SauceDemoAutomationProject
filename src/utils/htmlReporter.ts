@@ -111,7 +111,7 @@ export function generateE2EHtmlReport(
     <div class="header">
       <div>
         <h1>🚀 WebdriverIO E2E Test Report</h1>
-        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Suite: <strong>${suiteName}</strong> | Environment: <strong style="color: #2563eb; text-transform: uppercase;">${environment}</strong> | Run Time: <strong>${timestamp}</strong></p>
+        <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Suite: <strong>${suiteName}</strong> | Environment: <strong style="color: #2563eb; text-transform: uppercase;">${environment}</strong> | Run Time: <strong>${timestamp}</strong> | <a href="../logs/${timestamp}.log" target="_blank" style="color: #2563eb; font-weight: 600; text-decoration: none;">📄 Execution Log</a></p>
       </div>
       <div style="display: flex; gap: 8px; align-items: center;">
         <span style="background: #e0e7ff; color: #3730a3; font-weight: 700; font-size: 13px; padding: 6px 14px; border-radius: 9999px;">ENV: ${environment.toUpperCase()}</span>

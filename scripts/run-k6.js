@@ -69,8 +69,21 @@ const timestamp = getFormattedTimestamp();
 // Output directories
 const htmlDir = path.resolve(__dirname, '../reports/performance/html');
 const screenshotsDir = path.resolve(__dirname, '../reports/performance/screenshots');
+const logsDir = path.resolve(__dirname, '../reports/performance/logs');
 if (!fs.existsSync(htmlDir)) fs.mkdirSync(htmlDir, { recursive: true });
 if (!fs.existsSync(screenshotsDir)) fs.mkdirSync(screenshotsDir, { recursive: true });
+if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir, { recursive: true });
+
+const logFile = path.resolve(logsDir, `${timestamp}.log`);
+const cumulativeLogFile = path.resolve(logsDir, 'perf-execution.log');
+
+function appendLog(line) {
+  const cleanLine = line.replace(/\u001b\[[0-9;]*m/g, '').replace(/\[\d+m/g, '').replace(/\[\d+;\d+m/g, '');
+  try {
+    fs.appendFileSync(logFile, cleanLine + '\n', 'utf-8');
+    fs.appendFileSync(cumulativeLogFile, cleanLine + '\n', 'utf-8');
+  } catch (_) {}
+}
 
 const rawArgs = process.argv.slice(2);
 let testEnv = (process.env.TEST_ENV || 'qa').toLowerCase();
@@ -95,6 +108,9 @@ finalArgs.push('-e', `TEST_ENV=${testEnv}`);
 
 console.log(`\n\x1b[36m[k6 Runner] Starting performance test on [${testEnv.toUpperCase()}]...\x1b[0m`);
 console.log(`\x1b[90m[k6 Runner] Environment: ${testEnv.toUpperCase()} | Report ID: ${timestamp}\x1b[0m\n`);
+
+appendLog(`[${new Date().toISOString()}] [k6 Runner] Starting performance test on [${testEnv.toUpperCase()}] | Report ID: ${timestamp}`);
+appendLog(`[${new Date().toISOString()}] [k6 Runner] Arguments: ${finalArgs.join(' ')}`);
 
 const proc = spawn(k6Bin, finalArgs, {
   shell: false,
@@ -173,10 +189,13 @@ proc.stderr.on('data', (chunk) => {
 
 proc.on('close', async (code) => {
   if (code !== 0) {
+    appendLog(`[${new Date().toISOString()}] [k6 Runner] Performance test failed or crossed threshold! (Exit code: ${code})`);
     console.log(`\n\x1b[31m[k6 Runner] Performance test failed or crossed threshold! (Exit code: ${code})\x1b[0m`);
     console.log(`\x1b[33m[k6 Runner] Capturing visual dashboard failure screenshot...\x1b[0m`);
     await captureFailureScreenshot(timestamp, htmlDir, screenshotsDir);
   } else {
+    appendLog(`[${new Date().toISOString()}] [k6 Runner] Performance test completed successfully. Exit code: 0`);
+    appendLog(`[${new Date().toISOString()}] [k6 Runner] Report generated: reports/performance/html/${timestamp}.html`);
     console.log(`\n\x1b[32m[k6 Runner] Performance HTML Report generated: reports/performance/html/${timestamp}.html\x1b[0m\n`);
   }
 
